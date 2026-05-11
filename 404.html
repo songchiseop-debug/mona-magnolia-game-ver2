@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>페이지를 찾을 수 없어요 - 모나용평 산목련 축제</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(180deg, #ffd6a5 0%, #fdfcdc 100%);
+            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        .box {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 4px solid #c41b5a;
+            max-width: 360px;
+        }
+        .emoji { font-size: 64px; margin-bottom: 12px; }
+        h1 { color: #c41b5a; font-size: 22px; margin: 10px 0; }
+        p { color: #5a4434; line-height: 1.6; }
+        a {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 14px 36px;
+            background: #c41b5a;
+            color: white;
+            text-decoration: none;
+            border-radius: 999px;
+            font-weight: 800;
+        }
+        .countdown { font-size: 13px; color: #999; margin-top: 14px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <div class="emoji">🦉🌸</div>
+        <h1>길을 잃은 부엉이</h1>
+        <p>찾으시는 페이지가 없어요.<br>잠시 후 산목련 축제로 이동합니다.</p>
+        <a href="./">🌸 지금 바로 게임하러 가기</a>
+        <div class="countdown">3초 뒤 자동 이동…</div>
+    </div>
+    <script>
+        setTimeout(() => { window.location.href = './'; }, 3000);
+    </script>
+</body>
+</html>
