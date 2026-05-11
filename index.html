@@ -90,6 +90,51 @@
             font-size: 16px;
             letter-spacing: 2px;
         }
+        /* 라이프 + 골드 게이지 묶음 */
+        .life-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .gold-gauge {
+            background: rgba(255, 184, 0, 0.95);
+            color: #5a3a00;
+            padding: 3px 10px;
+            border-radius: 999px;
+            border: 2px solid #fff;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            transition: transform 0.2s, background 0.3s;
+        }
+        .gold-gauge.maxed {
+            background: linear-gradient(90deg, #ffd700, #ff8a4c);
+            color: #fff;
+            animation: gaugeMaxed 1s ease-in-out infinite;
+        }
+        @keyframes gaugeMaxed {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        .gold-gauge.bump {
+            animation: gaugeBump 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes gaugeBump {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.4); background: #fff8a8; }
+            100% { transform: scale(1); }
+        }
+        /* 라이프 회복 시 ♥ 깜빡임 */
+        #life.heal {
+            animation: lifeHeal 0.6s ease-out;
+        }
+        @keyframes lifeHeal {
+            0% { transform: scale(1); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+            30% { transform: scale(1.3); box-shadow: 0 0 30px #ff6b9d, 0 0 60px #fed330; }
+            100% { transform: scale(1); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        }
 
         /* 메시지 레이어 */
         #overlay {
@@ -340,6 +385,55 @@
             font-size: 12px;
             font-weight: 700;
         }
+        /* 부엉이 진화 배지 */
+        .evolution-badge {
+            background: linear-gradient(135deg, #ffd700 0%, #ff8a4c 50%, #ff4081 100%);
+            color: white;
+            border-radius: 16px;
+            padding: 12px;
+            margin: 8px 0;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(255, 138, 76, 0.4);
+            animation: evoGlow 1.2s ease-in-out infinite;
+            border: 2px solid #fff;
+        }
+        @keyframes evoGlow {
+            0%, 100% { 
+                box-shadow: 0 4px 16px rgba(255, 138, 76, 0.4);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: 0 4px 30px rgba(255, 215, 0, 0.7), 0 0 50px rgba(255, 64, 129, 0.3);
+                transform: scale(1.03);
+            }
+        }
+        .evo-icon {
+            font-size: 28px;
+            animation: evoSpin 1.5s linear infinite;
+            display: inline-block;
+        }
+        @keyframes evoSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .evo-title {
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            margin: 2px 0;
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+        }
+        .evo-tier {
+            font-size: 20px;
+            font-weight: 900;
+            margin: 2px 0;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+        }
+        .evo-desc {
+            font-size: 12px;
+            opacity: 0.95;
+            font-weight: 600;
+        }
         
         /* === 엔딩 씬 === */
         #endingScene {
@@ -488,7 +582,10 @@
 
     <div id="ui">
         <div class="ui-card"><span class="label">LV</span><span class="val" id="stage">1</span></div>
-        <div class="ui-card" id="life">♥♥♥</div>
+        <div class="life-group">
+            <div class="ui-card" id="life">♥♥♥</div>
+            <div class="gold-gauge" id="goldGauge">⭐0/3</div>
+        </div>
         <div class="ui-card"><span class="label">SCORE</span><span class="val" id="score">0</span></div>
     </div>
 
@@ -504,8 +601,10 @@
         <div class="controls-hint" id="hint">
             🖐️ <b>화면을 드래그</b>해서 부엉이를 움직이세요<br>
             🌸 <b>산목련</b>을 받으면 +10점 (레벨 클리어!)<br>
-            ⭐ <b>황금 꽃</b>은 +50점 보너스<br>
-            🍂 <b>낙엽</b>은 피하세요! (-1 ♥)<br>
+            ⭐ <b>황금 꽃</b> 3개 모으면 ♥ 회복!<br>
+            🍂 <b>낙엽</b> 조심 (-1 ♥)<br>
+            💥 <b>밤송이</b>는 매우 위험! (-3 ♥)<br>
+            🦉 레벨이 오르면 <b>부엉이가 진화</b>해요!<br>
             🏆 <b>총 20레벨</b>에 도전하세요!
         </div>
         <div class="btn-row" id="btnRow">
@@ -531,6 +630,7 @@
     const uiStage = document.getElementById('stage');
     const uiScore = document.getElementById('score');
     const uiLife = document.getElementById('life');
+    const uiGoldGauge = document.getElementById('goldGauge');
     const overlay = document.getElementById('overlay');
     const msgTitle = document.getElementById('msg-title');
     const msgSub = document.getElementById('msg-sub');
@@ -560,6 +660,9 @@
     let stageGoal = 50;
     let totalCaught = 0;
     let totalGold = 0;
+    let goldStreak = 0;        // 황금꽃 연속 카운터 (3개 모이면 ♥+1)
+    const MAX_LIFE = 5;        // 라이프 최대치
+    const GOLD_LIFE_BONUS = 3; // 황금꽃 몇 개당 라이프 +1
 
     // === 사운드 ===
     let audioCtx = null;
@@ -589,8 +692,52 @@
         [600, 800, 1000, 1200].forEach((f, i) => 
             setTimeout(() => playSound(f, 0.1, 'triangle', 0.2), i * 60));
     }
+    // 라이프 회복: 더 길고 화려한 상승 아르페지오
+    function playLifeUp() {
+        // C-E-G-C-E-G 상승 아르페지오 (밝고 따뜻한 느낌)
+        const notes = [523, 659, 784, 1047, 1319, 1568];
+        notes.forEach((f, i) => 
+            setTimeout(() => playSound(f, 0.18, 'triangle', 0.22), i * 70));
+        // 베이스 깔기
+        setTimeout(() => playSound(262, 0.5, 'sine', 0.12), 0);
+        setTimeout(() => playSound(392, 0.5, 'sine', 0.1), 200);
+    }
     function playHurt() {
         playSound(150, 0.3, 'sawtooth', 0.15);
+    }
+    // 밤송이 충돌: 강력한 폭발음 (저음 + 디스토션 + 충격음)
+    function playChestnutHit() {
+        // 강한 베이스 폭발음 (피치 드롭)
+        if (!audioCtx) return;
+        try {
+            const o1 = audioCtx.createOscillator();
+            const g1 = audioCtx.createGain();
+            o1.type = 'square';
+            o1.frequency.setValueAtTime(200, audioCtx.currentTime);
+            o1.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.4);
+            g1.gain.setValueAtTime(0.25, audioCtx.currentTime);
+            g1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+            o1.connect(g1); g1.connect(audioCtx.destination);
+            o1.start(); o1.stop(audioCtx.currentTime + 0.5);
+            
+            // 노이즈 충격음
+            const bufferSize = audioCtx.sampleRate * 0.15;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i/bufferSize);
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 600;
+            const g2 = audioCtx.createGain();
+            g2.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            g2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+            noise.connect(filter); filter.connect(g2); g2.connect(audioCtx.destination);
+            noise.start(); noise.stop(audioCtx.currentTime + 0.2);
+        } catch(e) {}
+        // 추가 효과음 (날카로운 비명)
+        setTimeout(() => playSound(80, 0.4, 'sawtooth', 0.12), 30);
     }
     
     // === 배경음악 (Web Audio API로 직접 작곡) ===
@@ -1051,6 +1198,297 @@
         ctx.fill();
         ctx.stroke();
 
+        // === 부엉이 진화 장식 (레벨에 따라) ===
+        drawOwlEvolution(ctx, s, t);
+
+        ctx.restore();
+    }
+    
+    // === 부엉이 진화 시스템 ===
+    // 레벨별 진화 단계 반환
+    function getOwlTier() {
+        if (stage >= 20) return 5; // 전설
+        if (stage >= 16) return 4; // 마법사
+        if (stage >= 11) return 3; // 베테랑
+        if (stage >= 6) return 2;  // 견습생
+        return 1; // 새내기
+    }
+    
+    function drawOwlEvolution(c, s, t) {
+        const tier = getOwlTier();
+        
+        // === 티어 5: 전설 - 후광 + 빛나는 효과 (가장 먼저 뒤에 그려야 함) ===
+        // 후광은 다른 장식보다 뒤에 와야 하니까 별도 처리는 drawOwl 직전에 함
+        
+        // === 티어 2+: 리본 (이마 가운데) ===
+        if (tier === 2) {
+            c.save();
+            c.translate(0, -45 * s);
+            // 리본 매듭
+            c.fillStyle = '#ff4d8d';
+            c.strokeStyle = '#c41b5a';
+            c.lineWidth = 1.5;
+            c.beginPath();
+            c.arc(0, 0, 3 * s, 0, Math.PI * 2);
+            c.fill(); c.stroke();
+            // 왼쪽 리본
+            c.beginPath();
+            c.moveTo(0, 0);
+            c.lineTo(-7 * s, -3 * s);
+            c.lineTo(-5 * s, 1 * s);
+            c.closePath();
+            c.fill(); c.stroke();
+            // 오른쪽 리본
+            c.beginPath();
+            c.moveTo(0, 0);
+            c.lineTo(7 * s, -3 * s);
+            c.lineTo(5 * s, 1 * s);
+            c.closePath();
+            c.fill(); c.stroke();
+            c.restore();
+        }
+        
+        // === 티어 3+: 황금 왕관 ===
+        if (tier === 3) {
+            c.save();
+            c.translate(0, -48 * s);
+            // 왕관 밴드
+            const crownGrad = c.createLinearGradient(0, -8 * s, 0, 0);
+            crownGrad.addColorStop(0, '#ffeb3b');
+            crownGrad.addColorStop(0.5, '#ffd700');
+            crownGrad.addColorStop(1, '#ff9800');
+            c.fillStyle = crownGrad;
+            c.strokeStyle = '#b8860b';
+            c.lineWidth = 1.5;
+            // 왕관 모양 (3개 뿔)
+            c.beginPath();
+            c.moveTo(-12 * s, 2 * s);
+            c.lineTo(-12 * s, -2 * s);
+            c.lineTo(-8 * s, -8 * s);  // 왼쪽 뿔
+            c.lineTo(-4 * s, -3 * s);
+            c.lineTo(0, -10 * s);      // 중앙 뿔 (제일 큼)
+            c.lineTo(4 * s, -3 * s);
+            c.lineTo(8 * s, -8 * s);   // 오른쪽 뿔
+            c.lineTo(12 * s, -2 * s);
+            c.lineTo(12 * s, 2 * s);
+            c.closePath();
+            c.fill(); c.stroke();
+            // 보석 (각 뿔 끝에)
+            c.fillStyle = '#ff1744';
+            c.beginPath(); c.arc(0, -10 * s, 1.5 * s, 0, Math.PI * 2); c.fill();
+            c.fillStyle = '#00e5ff';
+            c.beginPath(); c.arc(-8 * s, -8 * s, 1 * s, 0, Math.PI * 2); c.fill();
+            c.beginPath(); c.arc(8 * s, -8 * s, 1 * s, 0, Math.PI * 2); c.fill();
+            // 반짝임
+            const sparkle = Math.sin(t * 0.005) * 0.5 + 0.5;
+            c.fillStyle = `rgba(255, 255, 255, ${sparkle})`;
+            c.beginPath(); c.arc(-2 * s, -1 * s, 0.8 * s, 0, Math.PI * 2); c.fill();
+            c.restore();
+        }
+        
+        // === 티어 4+: 마법사 (왕관 + 별 망토 + 별 지팡이 효과) ===
+        if (tier === 4) {
+            // 황금 왕관 (위와 동일)
+            c.save();
+            c.translate(0, -48 * s);
+            const crownGrad = c.createLinearGradient(0, -8 * s, 0, 0);
+            crownGrad.addColorStop(0, '#ffeb3b');
+            crownGrad.addColorStop(0.5, '#ffd700');
+            crownGrad.addColorStop(1, '#ff9800');
+            c.fillStyle = crownGrad;
+            c.strokeStyle = '#b8860b';
+            c.lineWidth = 1.5;
+            c.beginPath();
+            c.moveTo(-12 * s, 2 * s);
+            c.lineTo(-12 * s, -2 * s);
+            c.lineTo(-8 * s, -8 * s);
+            c.lineTo(-4 * s, -3 * s);
+            c.lineTo(0, -10 * s);
+            c.lineTo(4 * s, -3 * s);
+            c.lineTo(8 * s, -8 * s);
+            c.lineTo(12 * s, -2 * s);
+            c.lineTo(12 * s, 2 * s);
+            c.closePath();
+            c.fill(); c.stroke();
+            c.fillStyle = '#ff1744';
+            c.beginPath(); c.arc(0, -10 * s, 1.5 * s, 0, Math.PI * 2); c.fill();
+            c.fillStyle = '#00e5ff';
+            c.beginPath(); c.arc(-8 * s, -8 * s, 1 * s, 0, Math.PI * 2); c.fill();
+            c.beginPath(); c.arc(8 * s, -8 * s, 1 * s, 0, Math.PI * 2); c.fill();
+            c.restore();
+            
+            // 별 망토 (몸통 뒤에 보이는 보라색 망토 끝자락) - 발 아래쪽
+            c.save();
+            c.fillStyle = 'rgba(106, 27, 154, 0.85)';
+            c.strokeStyle = '#4a148c';
+            c.lineWidth = 1.5;
+            c.beginPath();
+            c.moveTo(-30 * s, 25 * s);
+            c.quadraticCurveTo(-32 * s, 40 * s, -20 * s, 42 * s);
+            c.lineTo(20 * s, 42 * s);
+            c.quadraticCurveTo(32 * s, 40 * s, 30 * s, 25 * s);
+            c.stroke(); 
+            // 너무 진하지 않게 살짝만 채움
+            c.globalAlpha = 0.5;
+            c.fill();
+            c.globalAlpha = 1;
+            c.restore();
+            
+            // 머리 주변 작은 별들 (떠다님)
+            const starOffset = t * 0.002;
+            for (let i = 0; i < 3; i++) {
+                const angle = starOffset + (i * Math.PI * 2 / 3);
+                const sx = Math.cos(angle) * 32 * s;
+                const sy = Math.sin(angle) * 32 * s - 25 * s;
+                drawTinyStar(c, sx, sy, 2.5 * s, '#fed330');
+            }
+        }
+        
+        // === 티어 5: 전설 - 무지개 깃털 + 큰 후광 + 별 ===
+        if (tier === 5) {
+            // 무지개 날개 깃털 (몸통 옆에 추가 깃털)
+            const rainbowColors = ['#ff1744', '#ff9100', '#ffd600', '#00e676', '#00b0ff', '#651fff'];
+            
+            // 왼쪽 무지개 깃털
+            c.save();
+            c.translate(-30 * s, 0);
+            for (let i = 0; i < rainbowColors.length; i++) {
+                c.fillStyle = rainbowColors[i];
+                c.strokeStyle = '#3d2817';
+                c.lineWidth = 0.5;
+                const angle = -0.4 + i * 0.15;
+                c.save();
+                c.rotate(angle);
+                c.beginPath();
+                c.ellipse(-12 * s, 0, 8 * s, 2.5 * s, 0, 0, Math.PI * 2);
+                c.fill(); c.stroke();
+                c.restore();
+            }
+            c.restore();
+            
+            // 오른쪽 무지개 깃털
+            c.save();
+            c.translate(30 * s, 0);
+            for (let i = 0; i < rainbowColors.length; i++) {
+                c.fillStyle = rainbowColors[i];
+                c.strokeStyle = '#3d2817';
+                c.lineWidth = 0.5;
+                const angle = 0.4 - i * 0.15;
+                c.save();
+                c.rotate(angle);
+                c.beginPath();
+                c.ellipse(12 * s, 0, 8 * s, 2.5 * s, 0, 0, Math.PI * 2);
+                c.fill(); c.stroke();
+                c.restore();
+            }
+            c.restore();
+            
+            // 황금 왕관
+            c.save();
+            c.translate(0, -48 * s);
+            const crownGrad = c.createLinearGradient(0, -8 * s, 0, 0);
+            crownGrad.addColorStop(0, '#fffacd');
+            crownGrad.addColorStop(0.5, '#ffd700');
+            crownGrad.addColorStop(1, '#ff6f00');
+            c.fillStyle = crownGrad;
+            c.strokeStyle = '#b8860b';
+            c.lineWidth = 1.5;
+            c.beginPath();
+            c.moveTo(-12 * s, 2 * s);
+            c.lineTo(-12 * s, -2 * s);
+            c.lineTo(-8 * s, -10 * s);
+            c.lineTo(-4 * s, -3 * s);
+            c.lineTo(0, -14 * s);  // 더 큰 중앙 뿔
+            c.lineTo(4 * s, -3 * s);
+            c.lineTo(8 * s, -10 * s);
+            c.lineTo(12 * s, -2 * s);
+            c.lineTo(12 * s, 2 * s);
+            c.closePath();
+            c.fill(); c.stroke();
+            // 큰 보석
+            c.fillStyle = '#ff1744';
+            c.beginPath(); c.arc(0, -13 * s, 2 * s, 0, Math.PI * 2); c.fill();
+            c.fillStyle = '#fff';
+            c.beginPath(); c.arc(-0.5 * s, -13.5 * s, 0.6 * s, 0, Math.PI * 2); c.fill();
+            c.restore();
+            
+            // 둥둥 떠다니는 별 5개
+            const starOffset = t * 0.0025;
+            for (let i = 0; i < 5; i++) {
+                const angle = starOffset + (i * Math.PI * 2 / 5);
+                const radius = 40 * s + Math.sin(t * 0.005 + i) * 4 * s;
+                const sx = Math.cos(angle) * radius;
+                const sy = Math.sin(angle) * radius - 20 * s;
+                const starColor = rainbowColors[i % rainbowColors.length];
+                drawTinyStar(c, sx, sy, 3 * s, starColor);
+            }
+        }
+    }
+    
+    // 작은 별 그리기 (반짝이는 4점 별)
+    function drawTinyStar(c, x, y, size, color) {
+        c.save();
+        c.translate(x, y);
+        c.fillStyle = color;
+        c.beginPath();
+        c.moveTo(0, -size);
+        c.lineTo(size * 0.3, -size * 0.3);
+        c.lineTo(size, 0);
+        c.lineTo(size * 0.3, size * 0.3);
+        c.lineTo(0, size);
+        c.lineTo(-size * 0.3, size * 0.3);
+        c.lineTo(-size, 0);
+        c.lineTo(-size * 0.3, -size * 0.3);
+        c.closePath();
+        c.fill();
+        // 중앙 하이라이트
+        c.fillStyle = 'rgba(255,255,255,0.6)';
+        c.beginPath();
+        c.arc(0, 0, size * 0.25, 0, Math.PI * 2);
+        c.fill();
+        c.restore();
+    }
+    
+    // 부엉이 후광 (티어 5 전용 - 부엉이 본체 뒤에 그림)
+    function drawOwlAura(cx, cy, t) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        
+        // 회전하는 무지개 글로우
+        const pulse = 0.85 + Math.sin(t * 0.003) * 0.15;
+        const rotation = t * 0.0008;
+        ctx.rotate(rotation);
+        
+        // 후광 그라데이션 (여러 레이어)
+        const auraGrad = ctx.createRadialGradient(0, 0, 30, 0, 0, 80 * pulse);
+        auraGrad.addColorStop(0, 'rgba(255, 215, 0, 0)');
+        auraGrad.addColorStop(0.3, 'rgba(255, 215, 0, 0.15)');
+        auraGrad.addColorStop(0.5, 'rgba(255, 100, 200, 0.18)');
+        auraGrad.addColorStop(0.7, 'rgba(100, 150, 255, 0.12)');
+        auraGrad.addColorStop(1, 'rgba(150, 100, 255, 0)');
+        ctx.fillStyle = auraGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, 80 * pulse, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 빛 줄기 (8방향)
+        ctx.globalAlpha = 0.3 + Math.sin(t * 0.005) * 0.15;
+        for (let i = 0; i < 8; i++) {
+            ctx.save();
+            ctx.rotate(i * Math.PI / 4);
+            const rayGrad = ctx.createLinearGradient(0, 0, 0, -90);
+            rayGrad.addColorStop(0, 'rgba(255, 215, 0, 0.4)');
+            rayGrad.addColorStop(1, 'rgba(255, 215, 0, 0)');
+            ctx.fillStyle = rayGrad;
+            ctx.beginPath();
+            ctx.moveTo(-3, -30);
+            ctx.lineTo(0, -90);
+            ctx.lineTo(3, -30);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+        
         ctx.restore();
     }
 
@@ -1150,6 +1588,95 @@
         
         ctx.restore();
     }
+    
+    // 밤송이 그리기 (위험! ♥ -3)
+    function drawChestnut(x, y, size, angle) {
+        ctx.save();
+        ctx.translate(x, y);
+        
+        // 경고 글로우 (빨간 후광)
+        const pulseAlpha = 0.3 + Math.sin(angle * 4) * 0.2;
+        ctx.fillStyle = `rgba(255, 50, 50, ${pulseAlpha})`;
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.rotate(angle);
+        
+        // === 가시 (긴 가시들) ===
+        ctx.strokeStyle = '#3d2010';
+        ctx.fillStyle = '#5d3a1f';
+        ctx.lineWidth = 1.5;
+        ctx.lineCap = 'round';
+        const spikeCount = 14;
+        for (let i = 0; i < spikeCount; i++) {
+            const a = (Math.PI * 2 / spikeCount) * i;
+            const x1 = Math.cos(a) * size * 0.65;
+            const y1 = Math.sin(a) * size * 0.65;
+            const x2 = Math.cos(a) * size * 1.15;
+            const y2 = Math.sin(a) * size * 1.15;
+            
+            // 두꺼운 가시 (삼각형)
+            const perpA = a + Math.PI / 2;
+            const px = Math.cos(perpA) * size * 0.08;
+            const py = Math.sin(perpA) * size * 0.08;
+            
+            ctx.beginPath();
+            ctx.moveTo(x1 - px, y1 - py);
+            ctx.lineTo(x1 + px, y1 + py);
+            ctx.lineTo(x2, y2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+        
+        // === 본체 (둥근 갈색 구) ===
+        const bodyGrad = ctx.createRadialGradient(-size * 0.2, -size * 0.2, 0, 0, 0, size * 0.75);
+        bodyGrad.addColorStop(0, '#a0623a');
+        bodyGrad.addColorStop(0.6, '#6d3e1f');
+        bodyGrad.addColorStop(1, '#3d2010');
+        ctx.fillStyle = bodyGrad;
+        ctx.strokeStyle = '#2a1607';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 0.65, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        
+        // 작은 짧은 가시 (몸체 위에)
+        ctx.strokeStyle = '#2a1607';
+        ctx.lineWidth = 1.5;
+        for (let i = 0; i < 8; i++) {
+            const a = (Math.PI * 2 / 8) * i + Math.PI / 8;
+            const x1 = Math.cos(a) * size * 0.35;
+            const y1 = Math.sin(a) * size * 0.35;
+            const x2 = Math.cos(a) * size * 0.55;
+            const y2 = Math.sin(a) * size * 0.55;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+        }
+        
+        // 무서운 눈 (위협 표시)
+        ctx.fillStyle = '#ff1744';
+        ctx.beginPath();
+        ctx.arc(-size * 0.18, -size * 0.1, size * 0.07, 0, Math.PI * 2);
+        ctx.arc(size * 0.18, -size * 0.1, size * 0.07, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 화난 눈썹
+        ctx.strokeStyle = '#2a1607';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-size * 0.28, -size * 0.22);
+        ctx.lineTo(-size * 0.08, -size * 0.14);
+        ctx.moveTo(size * 0.28, -size * 0.22);
+        ctx.lineTo(size * 0.08, -size * 0.14);
+        ctx.stroke();
+        
+        ctx.restore();
+    }
 
     function spawnParticles(x, y, color, count = 8) {
         for (let i = 0; i < count; i++) {
@@ -1203,6 +1730,8 @@
             leafChance: 0.12 + t * 0.33,
             // 황금꽃 비율 (0.06 → 0.12, 후반에 보상)
             goldChance: 0.06 + t * 0.06,
+            // 밤송이 비율 (드물게 등장. 레벨 3부터 0.5% → 레벨 20에서 4%)
+            chestnutChance: L >= 3 ? 0.005 + t * 0.035 : 0,
             // 동시 낙하 (1 → 2개씩)
             multiSpawn: L >= 12 ? 2 : 1,
             // 위아래 좌우 흔들림 강도
@@ -1218,18 +1747,33 @@
         const cfg = levelConfig;
         const r = Math.random();
         let type = 'magnolia';
-        if (r < cfg.goldChance) type = 'gold';
-        else if (r < cfg.goldChance + cfg.leafChance) type = 'leaf';
+        // 밤송이가 가장 드물지만 가장 위험 - 먼저 체크
+        if (r < cfg.chestnutChance) type = 'chestnut';
+        else if (r < cfg.chestnutChance + cfg.goldChance) type = 'gold';
+        else if (r < cfg.chestnutChance + cfg.goldChance + cfg.leafChance) type = 'leaf';
+        
+        // 밤송이는 무거우니 좀 더 빠르게 떨어짐, 크기도 큼
+        let size, speed;
+        if (type === 'gold') {
+            size = 22;
+            speed = cfg.speed + Math.random() * 0.8;
+        } else if (type === 'chestnut') {
+            size = 24 + Math.random() * 4;
+            speed = cfg.speed * 1.3 + Math.random() * 0.5; // 더 빠름
+        } else {
+            size = 18 + Math.random() * 6;
+            speed = cfg.speed + Math.random() * 0.8;
+        }
         
         items.push({
             x: 30 + Math.random() * (W - 60),
             y: -40,
-            size: type === 'gold' ? 22 : (18 + Math.random() * 6),
-            speed: cfg.speed + Math.random() * 0.8,
+            size: size,
+            speed: speed,
             angle: Math.random() * Math.PI * 2,
             spin: (Math.random() - 0.5) * 0.08,
             sway: Math.random() * Math.PI * 2,
-            swayStr: cfg.swayStrength,
+            swayStr: type === 'chestnut' ? 0.3 : cfg.swayStrength, // 밤송이는 거의 직선 낙하
             type
         });
     }
@@ -1249,6 +1793,7 @@
         score = 0; life = 3; stage = 1; 
         items = []; particles = []; combo = 0;
         totalCaught = 0; totalGold = 0;
+        goldStreak = 0;
         levelCaught = 0;
         levelClearing = false;
         levelConfig = getLevelConfig(stage);
@@ -1299,7 +1844,19 @@
     function updateUI() {
         uiScore.textContent = score;
         uiStage.textContent = stage;
-        uiLife.textContent = "♥".repeat(Math.max(0, life)) + "♡".repeat(Math.max(0, 3 - life));
+        // 현재 라이프 수에 맞춰 동적으로 표시 (시작 3칸, 골드로 늘면 더 표시)
+        const slots = Math.max(3, life);
+        uiLife.textContent = "♥".repeat(Math.max(0, life)) + "♡".repeat(Math.max(0, slots - life));
+        // 황금꽃 진행도 (다음 ♥까지)
+        if (uiGoldGauge) {
+            if (life >= MAX_LIFE) {
+                uiGoldGauge.textContent = '⭐MAX';
+                uiGoldGauge.classList.add('maxed');
+            } else {
+                uiGoldGauge.textContent = '⭐' + goldStreak + '/' + GOLD_LIFE_BONUS;
+                uiGoldGauge.classList.remove('maxed');
+            }
+        }
     }
 
     function gameLoop(timestamp) {
@@ -1335,6 +1892,7 @@
 
             if (item.type === 'magnolia') drawMagnolia(item.x, item.y, item.size, item.angle);
             else if (item.type === 'gold') drawGoldenFlower(item.x, item.y, item.size, item.angle);
+            else if (item.type === 'chestnut') drawChestnut(item.x, item.y, item.size, item.angle);
             else drawLeaf(item.x, item.y, item.size, item.angle);
 
             const owlCx = owl.x + owl.w / 2;
@@ -1360,11 +1918,63 @@
                 } else if (item.type === 'gold') {
                     score += 50;
                     totalGold++;
+                    goldStreak++;
                     spawnParticles(item.x, item.y, '#ffd700', 15);
-                    showCombo('+50 ⭐');
-                    playGold();
-                    vibrate(50);
+                    
+                    // 3개째이고 라이프가 최대치 미만이면 회복!
+                    if (goldStreak >= GOLD_LIFE_BONUS && life < MAX_LIFE) {
+                        goldStreak = 0;
+                        life++;
+                        // 시각/청각/촉각 효과 풀세트
+                        showCombo('♥ LIFE UP!');
+                        playLifeUp();
+                        vibrate([0, 60, 40, 60, 40, 120]);
+                        spawnParticles(owl.x + owl.w/2, owl.y, '#ff6b9d', 25);
+                        spawnParticles(owl.x + owl.w/2, owl.y, '#fed330', 15);
+                        // 라이프 카드 깜빡임
+                        uiLife.classList.remove('heal');
+                        void uiLife.offsetWidth;
+                        uiLife.classList.add('heal');
+                    } else if (goldStreak >= GOLD_LIFE_BONUS && life >= MAX_LIFE) {
+                        // 라이프 풀일 땐 카운터만 리셋 + 메시지 다르게
+                        goldStreak = 0;
+                        showCombo('+50 ⭐ MAX!');
+                        playGold();
+                        vibrate(50);
+                    } else {
+                        showCombo('+50 ⭐');
+                        playGold();
+                        vibrate(50);
+                    }
+                    
+                    // 골드 게이지 통통 튀는 효과
+                    if (uiGoldGauge) {
+                        uiGoldGauge.classList.remove('bump');
+                        void uiGoldGauge.offsetWidth;
+                        uiGoldGauge.classList.add('bump');
+                    }
                     owl.squish = 1.5;
+                } else if (item.type === 'chestnut') {
+                    // 밤송이! 무자비한 -3 ♥
+                    life -= 3;
+                    combo = 0;
+                    goldStreak = 0; // 골드 게이지도 리셋
+                    // 강력한 시각/청각 효과
+                    spawnParticles(item.x, item.y, '#5d3a1f', 20);
+                    spawnParticles(item.x, item.y, '#ff1744', 15);
+                    spawnParticles(owl.x + owl.w/2, owl.y, '#ffeb3b', 12); // 별 충돌
+                    playChestnutHit();
+                    vibrate([0, 200, 80, 200, 80, 300]);
+                    shake = 25; // 더 강한 흔들림
+                    showCombo('💥 -3 ♥');
+                    owl.squish = -2; // 강한 압축
+                    if (life <= 0) {
+                        items.splice(i, 1);
+                        ctx.restore();
+                        updateParticles();
+                        endGame(false);
+                        return;
+                    }
                 } else {
                     life--;
                     combo = 0;
@@ -1421,6 +2031,10 @@
             if (comboTimer === 0) combo = 0;
         }
 
+        // 티어 5 (레벨 20) 부엉이 후광 - 본체보다 먼저 그리기
+        if (getOwlTier() === 5) {
+            drawOwlAura(owl.x + owl.w/2, owl.y + owl.h/2, timestamp);
+        }
         drawOwl(owl.x, owl.y, owl.w, owl.h, timestamp);
         updateParticles();
 
@@ -1455,6 +2069,18 @@
         const nextLv = stage + 1;
         const nextCfg = getLevelConfig(nextLv);
         
+        // 부엉이 진화 체크 (현재 티어 vs 다음 티어)
+        const currentTier = getOwlTier();
+        const nextTierStage = stage; // 임시 보관용
+        // 다음 레벨이 됐을 때의 티어 계산을 위해 임시로 stage를 바꿔봄
+        const savedStage = stage;
+        stage = nextLv;
+        const nextTier = getOwlTier();
+        stage = savedStage;
+        const isEvolution = nextTier > currentTier;
+        const tierNames = ['', '🥚 새내기', '🎀 견습생', '👑 베테랑', '✨ 마법사', '🏆 전설'];
+        const tierDescs = ['', '', '리본을 받았어요!', '황금 왕관 획득!', '마법사 망토 + 별들', '무지개 깃털 + 후광!'];
+        
         // 레벨별 메시지
         let stageMsg = '';
         if (nextLv <= 5) stageMsg = '봄바람이 살랑살랑~';
@@ -1462,6 +2088,18 @@
         else if (nextLv <= 15) stageMsg = '낙엽 조심! 폭풍이 와요';
         else if (nextLv < 20) stageMsg = '⚠️ 마스터 구간 진입!';
         else stageMsg = '🏆 최종 라운드!';
+        
+        // 밤송이 첫 등장 경고
+        if (stage === 2) stageMsg = '⚠️ 밤송이 조심! (♥-3)';
+        
+        const evolutionHtml = isEvolution ? `
+            <div class="evolution-badge">
+                <div class="evo-icon">✨</div>
+                <div class="evo-title">부엉이 진화!</div>
+                <div class="evo-tier">${tierNames[nextTier]}</div>
+                <div class="evo-desc">${tierDescs[nextTier]}</div>
+            </div>
+        ` : '';
         
         card.innerHTML = `
             <div class="clear-stars">⭐ ⭐ ⭐</div>
@@ -1473,6 +2111,7 @@
                 <div class="stat-row"><span>황금꽃</span><strong>${totalGold}개</strong></div>
                 <div class="stat-row"><span>남은 생명</span><strong>${'♥'.repeat(life)}</strong></div>
             </div>
+            ${evolutionHtml}
             <div class="next-info">
                 <div class="next-label">NEXT</div>
                 <div class="next-level">LEVEL ${nextLv}</div>
