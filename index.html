@@ -43,17 +43,16 @@
             width: 100%; height: 100%;
         }
         
-        /* 게임 중 상단 로고 워터마크 */
+        /* 게임 중 로고 워터마크 - 좌측 하단 (게임 플레이 방해 안 함) */
         #gameLogo {
             position: absolute;
-            top: calc(env(safe-area-inset-top, 0px) + 60px);
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            opacity: 0.7;
+            bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+            left: 16px;
+            width: 75px;
+            opacity: 0.55;
             pointer-events: none;
             z-index: 4;
-            filter: drop-shadow(0 1px 2px rgba(255,255,255,0.6));
+            filter: drop-shadow(0 1px 3px rgba(255,255,255,0.8));
         }
         
         /* 상단 UI */
@@ -217,6 +216,45 @@
             flex-direction: column;
             gap: 4px;
             align-items: center;
+        }
+        /* 축제 정보 버튼 (모나용평 컬러) */
+        .btn.info-btn {
+            background: linear-gradient(180deg, #6b7d3a 0%, #4a5629 100%);
+            box-shadow: 0 5px 0 #2f3819, 0 7px 18px rgba(47, 56, 25, 0.3);
+            font-size: 15px;
+            padding: 13px 24px;
+            max-width: 320px;
+        }
+        .btn.info-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 #2f3819, 0 4px 10px rgba(47, 56, 25, 0.3);
+        }
+        .btn.info-btn.visited {
+            background: linear-gradient(180deg, #4caf50 0%, #2e7d32 100%);
+            box-shadow: 0 5px 0 #1b5e20, 0 7px 18px rgba(27, 94, 32, 0.3);
+        }
+        .btn.info-btn.visited:active {
+            box-shadow: 0 2px 0 #1b5e20, 0 4px 10px rgba(27, 94, 32, 0.3);
+        }
+        /* 보너스 힌트 */
+        .bonus-hint {
+            font-size: 12px;
+            color: #4a5629;
+            margin: 2px 0 8px;
+            padding: 5px 12px;
+            background: rgba(255, 235, 100, 0.6);
+            border-radius: 999px;
+            border: 1px dashed #b8860b;
+            font-weight: 600;
+            transition: all 0.4s;
+        }
+        .bonus-hint.activated {
+            background: rgba(76, 175, 80, 0.2);
+            color: #1b5e20;
+            border: 1px solid #4caf50;
+        }
+        .bonus-hint.activated b {
+            color: #1b5e20;
         }
         
         /* 결과 카드 (캡처 대상) */
@@ -608,6 +646,12 @@
             🏆 <b>총 20레벨</b>에 도전하세요!
         </div>
         <div class="btn-row" id="btnRow">
+            <button class="btn info-btn" id="festivalInfoBtn" onclick="visitFestivalInfo()">
+                🎁 2026년 발왕산 산목련 축제 정보
+            </button>
+            <div class="bonus-hint" id="bonusHint">
+                💡 위 버튼을 누르고 시작하면 <b>생명력 +1</b>!
+            </div>
             <button class="btn" onclick="startGame()">축제 시작 🌸</button>
         </div>
     </div>
@@ -624,6 +668,10 @@
     
     // === 응모 폼 주소 ===
     const FORM_URL = "https://forms.gle/PJzWfb25r6FWZR9U6";
+    // === 축제 정보 페이지 (방문 시 생명력 +1 보너스) ===
+    const FESTIVAL_INFO_URL = "https://www.yongpyong.co.kr/";
+    let hasVisitedInfo = false; // 이번 세션에 정보 페이지 방문 여부
+    const BONUS_LIFE_FROM_VISIT = 1; // 방문 보너스 라이프
 
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
@@ -1786,11 +1834,56 @@
         setTimeout(() => comboEl.classList.remove('show'), 800);
     }
 
+    // === 축제 정보 페이지 방문 (생명력 +1 보너스) ===
+    function visitFestivalInfo() {
+        // 새 탭에서 축제 정보 열기 (게임 흐름 안 끊김)
+        window.open(FESTIVAL_INFO_URL, '_blank', 'noopener,noreferrer');
+        
+        // 보너스 활성화 (이미 활성화돼 있어도 한번 더 누르는 건 OK)
+        if (!hasVisitedInfo) {
+            hasVisitedInfo = true;
+            updateBonusUI();
+            showToast('🎁 생명력 +1 보너스가 적용됐어요!', 2500);
+            // 살짝 축하 사운드 (이미 audio context가 있다면)
+            if (audioCtx && soundOn) {
+                playSound(600, 0.1, 'triangle', 0.15);
+                setTimeout(() => playSound(800, 0.15, 'triangle', 0.15), 80);
+                setTimeout(() => playSound(1000, 0.2, 'triangle', 0.15), 180);
+            }
+        } else {
+            showToast('이미 보너스가 적용돼 있어요! 🎁', 1800);
+        }
+    }
+    
+    // 보너스 UI 갱신 (시작 화면 + 종료 화면 둘 다)
+    function updateBonusUI() {
+        // 시작 화면 버튼 상태
+        const startBtn = document.getElementById('festivalInfoBtn');
+        const startHint = document.getElementById('bonusHint');
+        if (startBtn && hasVisitedInfo) {
+            startBtn.classList.add('visited');
+            startBtn.innerHTML = '✓ 2026년 발왕산 산목련 축제 정보';
+        }
+        if (startHint && hasVisitedInfo) {
+            startHint.classList.add('activated');
+            startHint.innerHTML = '✓ <b>생명력 +1 보너스 적용됨!</b> 🎁';
+        }
+        // 종료 화면 버튼 상태
+        const endBtn = document.getElementById('festivalInfoBtnEnd');
+        if (endBtn && hasVisitedInfo) {
+            endBtn.classList.add('visited');
+            endBtn.innerHTML = '✓ 2026년 발왕산 산목련 축제 정보';
+        }
+    }
+    
     function startGame() {
         initAudio();
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         
-        score = 0; life = 3; stage = 1; 
+        score = 0; 
+        // 축제 정보 방문 보너스가 있으면 라이프 +1
+        life = 3 + (hasVisitedInfo ? BONUS_LIFE_FROM_VISIT : 0);
+        stage = 1; 
         items = []; particles = []; combo = 0;
         totalCaught = 0; totalGold = 0;
         goldStreak = 0;
@@ -2170,6 +2263,9 @@
         
         btnRow.innerHTML = `
             <button class="btn" onclick="captureAndApply()">📸 점수 캡처 & 응모하기</button>
+            <button class="btn info-btn ${hasVisitedInfo ? 'visited' : ''}" id="festivalInfoBtnEnd" onclick="visitFestivalInfo()">
+                ${hasVisitedInfo ? '✓' : '🎁'} 2026년 발왕산 산목련 축제 정보
+            </button>
             <button class="btn secondary" onclick="startGame()">🦉 처음부터 다시</button>
         `;
         
@@ -2540,9 +2636,12 @@
         msgTitle.textContent = "수고하셨어요!";
         msgSub.textContent = `LEVEL ${stage}까지 도달!`;
         
-        // 버튼: 캡처 + 응모 + 재도전
+        // 버튼: 캡처 + 응모 + 정보 + 재도전
         btnRow.innerHTML = `
             <button class="btn" onclick="captureAndApply()">📸 점수 캡처 & 응모하기</button>
+            <button class="btn info-btn ${hasVisitedInfo ? 'visited' : ''}" id="festivalInfoBtnEnd" onclick="visitFestivalInfo()">
+                ${hasVisitedInfo ? '✓' : '🎁'} 2026년 발왕산 산목련 축제 정보
+            </button>
             <button class="btn secondary" onclick="startGame()">🦉 다시 도전</button>
         `;
     }
