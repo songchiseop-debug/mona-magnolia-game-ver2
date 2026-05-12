@@ -550,6 +550,17 @@
             margin-top: 4px;
             font-family: Georgia, 'Apple SD Gothic Neo', serif;
         }
+        /* 화면 하단 작은 크레딧 (종료 화면 공통) */
+        .game-credit {
+            font-size: 10px;
+            color: #b09a82;
+            font-style: italic;
+            letter-spacing: 1px;
+            font-family: Georgia, 'Apple SD Gothic Neo', serif;
+            margin-top: 14px;
+            padding-bottom: 4px;
+            opacity: 0.75;
+        }
         
         /* 캡처 안내 토스트 */
         #toast {
@@ -2256,7 +2267,7 @@
                     <div class="ending-score-label">FINAL SCORE</div>
                     <div class="ending-score-num">${score}</div>
                 </div>
-                <div class="ending-credit">created by chisup song</div>
+                <div class="ending-credit">created by songchisup</div>
             </div>
         `;
         overlay.insertBefore(scene, btnRow);
@@ -2267,6 +2278,7 @@
                 ${hasVisitedInfo ? '✓' : '🎁'} 2026년 발왕산 산목련 축제 정보
             </button>
             <button class="btn secondary" onclick="startGame()">🦉 처음부터 다시</button>
+            <div class="game-credit">created by songchisup</div>
         `;
         
         // 엔딩 캔버스 애니메이션 시작
@@ -2643,6 +2655,7 @@
                 ${hasVisitedInfo ? '✓' : '🎁'} 2026년 발왕산 산목련 축제 정보
             </button>
             <button class="btn secondary" onclick="startGame()">🦉 다시 도전</button>
+            <div class="game-credit">created by songchisup</div>
         `;
     }
     
@@ -2781,7 +2794,7 @@
                         // 크레딧 (캡처 이미지에도 남기기)
                         cx.fillStyle = '#aaa';
                         cx.font = 'italic 13px Georgia, serif';
-                        cx.fillText('created by chisup song', cw/2, ch - 55);
+                        cx.fillText('created by songchisup', cw/2, ch - 55);
                     }
                     
                     // 하단 워터마크
