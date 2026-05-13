@@ -184,6 +184,27 @@
             max-width: 300px;
         }
         .controls-hint b { color: #4a5629; }
+        /* 뒤로가기 경고 박스 */
+        .back-warning {
+            background: rgba(255, 235, 100, 0.35);
+            border: 2px solid #ff8a4c;
+            color: #6b3a1f;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 12px;
+            line-height: 1.5;
+            margin-bottom: 16px;
+            max-width: 300px;
+            font-weight: 500;
+            /* 한국어 자연 줄바꿈 - 단어 단위로 끊기 */
+            word-break: keep-all;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+        .back-warning b {
+            color: #c41b5a;
+            font-weight: 800;
+        }
         
         .btn {
             padding: 15px 38px; 
@@ -235,6 +256,20 @@
         }
         .btn.info-btn.visited:active {
             box-shadow: 0 2px 0 #1b5e20, 0 4px 10px rgba(27, 94, 32, 0.3);
+        }
+        /* 공유 버튼 (카톡 옐로우 톤) */
+        .btn.share-btn {
+            background: linear-gradient(180deg, #fee500 0%, #f5c100 100%);
+            color: #3a1d1d;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+            box-shadow: 0 5px 0 #ab8800, 0 7px 18px rgba(171, 136, 0, 0.3);
+            font-size: 15px;
+            padding: 13px 24px;
+            max-width: 320px;
+        }
+        .btn.share-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 #ab8800, 0 4px 10px rgba(171, 136, 0, 0.3);
         }
         /* 보너스 힌트 */
         .bonus-hint {
@@ -656,6 +691,11 @@
             🦉 레벨이 오르면 <b>부엉이가 진화</b>해요!<br>
             🏆 <b>총 20레벨</b>에 도전하세요!
         </div>
+        <div class="back-warning">
+            ⚠️ <b>뒤로가기 버튼을 누르면</b><br>
+            진행 상황이 저장되지 않고 초기화되어<br>
+            처음부터 다시 시작해야 합니다.
+        </div>
         <div class="btn-row" id="btnRow">
             <button class="btn info-btn" id="festivalInfoBtn" onclick="visitFestivalInfo()">
                 🎁 2026년 발왕산 산목련 축제 정보
@@ -664,6 +704,7 @@
                 💡 위 버튼을 누르고 시작하면 <b>생명력 +1</b>!
             </div>
             <button class="btn" onclick="startGame()">게임시작 🌸</button>
+            <button class="btn share-btn" onclick="shareGame()">💬 친구에게 공유하기</button>
         </div>
     </div>
 
@@ -683,6 +724,22 @@
     const FESTIVAL_INFO_URL = "https://www.yongpyong.co.kr/";
     let hasVisitedInfo = false; // 이번 세션에 정보 페이지 방문 여부
     const BONUS_LIFE_FROM_VISIT = 1; // 방문 보너스 라이프
+    
+    // === 공유용 메시지 ===
+    const SHARE_TITLE = "🦉🌸 모나용평 산목련 축제 게임";
+    const SHARE_TEXT = "발왕산 봄날, 부엉이와 함께 산목련을 받아보세요! 🌸\n총 20레벨에 도전하고 점수로 응모 이벤트 참여! 🏆";
+    
+    function getShareUrl() {
+        // 항상 현재 페이지 URL 사용
+        return location.href.split('?')[0].split('#')[0];
+    }
+    
+    // === 시작 화면 전용 요소 표시/숨김 (back-warning 등) ===
+    function setStartScreenElementsVisible(visible) {
+        const display = visible ? '' : 'none';
+        const warning = document.querySelector('.back-warning');
+        if (warning) warning.style.display = display;
+    }
 
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
@@ -1887,6 +1944,57 @@
         }
     }
     
+    // === 친구에게 공유 (카톡/문자/SNS 통합) ===
+    async function shareGame() {
+        const url = getShareUrl();
+        const shareData = {
+            title: SHARE_TITLE,
+            text: SHARE_TEXT + "\n\n" + url,
+            url: url
+        };
+        
+        // 1) Web Share API (iOS/Android 네이티브 공유 시트 → 카톡 선택 가능)
+        if (navigator.share) {
+            try {
+                await navigator.share(shareData);
+                if (audioCtx && soundOn) {
+                    playSound(800, 0.1, 'triangle', 0.15);
+                    setTimeout(() => playSound(1200, 0.15, 'triangle', 0.15), 80);
+                }
+                return;
+            } catch (e) {
+                // 사용자가 취소했을 때는 그냥 종료
+                if (e.name === 'AbortError') return;
+                // 그 외 오류는 폴백
+            }
+        }
+        
+        // 2) 폴백: 클립보드에 복사
+        const fullText = SHARE_TEXT + "\n\n" + url;
+        try {
+            await navigator.clipboard.writeText(fullText);
+            showToast('📋 게임 설명+링크가 복사됐어요! 카톡에 붙여넣으세요', 3000);
+            if (audioCtx && soundOn) {
+                playSound(800, 0.1, 'triangle', 0.15);
+            }
+        } catch (e) {
+            // 3) 최후 폴백: 텍스트 영역 통한 복사 (구형 브라우저)
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = fullText;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showToast('📋 게임 설명+링크가 복사됐어요!', 3000);
+            } catch (e2) {
+                showToast('⚠️ 복사 실패. 주소창의 URL을 복사해서 공유해주세요', 3000);
+            }
+        }
+    }
+    
     function startGame() {
         initAudio();
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
@@ -1914,6 +2022,7 @@
         
         // 시작 화면 요소 복원
         hintEl.style.display = '';
+        setStartScreenElementsVisible(true);
         document.querySelector('.owl-icon').style.display = '';
         document.querySelector('.overlay-logo').style.display = '';
         
@@ -2156,6 +2265,7 @@
         
         overlay.style.display = 'flex';
         hintEl.style.display = 'none';
+        setStartScreenElementsVisible(false);
         document.querySelector('.owl-icon').style.display = 'none';
         document.querySelector('.overlay-logo').style.display = 'none';
         msgTitle.style.display = 'none';
@@ -2243,6 +2353,7 @@
         
         overlay.style.display = 'flex';
         hintEl.style.display = 'none';
+        setStartScreenElementsVisible(false);
         document.querySelector('.owl-icon').style.display = 'none';
         document.querySelector('.overlay-logo').style.display = 'none';
         msgTitle.style.display = 'none';
@@ -2277,6 +2388,7 @@
             <button class="btn info-btn ${hasVisitedInfo ? 'visited' : ''}" id="festivalInfoBtnEnd" onclick="visitFestivalInfo()">
                 ${hasVisitedInfo ? '✓' : '🎁'} 2026년 발왕산 산목련 축제 정보
             </button>
+            <button class="btn share-btn" onclick="shareGame()">💬 친구에게 공유하기</button>
             <button class="btn secondary" onclick="startGame()">🦉 처음부터 다시</button>
             <div class="game-credit">created by songchisup</div>
         `;
@@ -2612,6 +2724,7 @@
         stopBgm();
         overlay.style.display = 'flex';
         hintEl.style.display = 'none';
+        setStartScreenElementsVisible(false);
         document.querySelector('.owl-icon').style.display = 'none';
         document.querySelector('.overlay-logo').style.display = '';
         msgTitle.style.display = '';
@@ -2648,12 +2761,13 @@
         msgTitle.textContent = "수고하셨어요!";
         msgSub.textContent = `LEVEL ${stage}까지 도달!`;
         
-        // 버튼: 캡처 + 응모 + 정보 + 재도전
+        // 버튼: 캡처 + 응모 + 정보 + 공유 + 재도전
         btnRow.innerHTML = `
             <button class="btn" onclick="captureAndApply()">📸 점수 캡처 & 응모하기</button>
             <button class="btn info-btn ${hasVisitedInfo ? 'visited' : ''}" id="festivalInfoBtnEnd" onclick="visitFestivalInfo()">
                 ${hasVisitedInfo ? '✓' : '🎁'} 2026년 발왕산 산목련 축제 정보
             </button>
+            <button class="btn share-btn" onclick="shareGame()">💬 친구에게 공유하기</button>
             <button class="btn secondary" onclick="startGame()">🦉 다시 도전</button>
             <div class="game-credit">created by songchisup</div>
         `;
