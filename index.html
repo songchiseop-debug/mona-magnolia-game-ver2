@@ -213,6 +213,31 @@
             overflow-wrap: break-word;
             text-align: center;
         }
+        /* 음악 안내 박스 (펄스 효과로 주의 끌기) */
+        .music-hint {
+            background: linear-gradient(90deg, rgba(196, 27, 90, 0.15), rgba(255, 138, 76, 0.15));
+            border: 2px solid #c41b5a;
+            color: #8a1448;
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-size: 12px;
+            margin-bottom: 12px;
+            max-width: 300px;
+            font-weight: 700;
+            text-align: center;
+            animation: musicPulse 1.6s ease-in-out infinite;
+            word-break: keep-all;
+        }
+        @keyframes musicPulse {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(196, 27, 90, 0.3);
+            }
+            50% { 
+                transform: scale(1.03);
+                box-shadow: 0 0 0 8px rgba(196, 27, 90, 0);
+            }
+        }
         .back-warning b {
             color: #c41b5a;
             font-weight: 800;
@@ -318,7 +343,13 @@
         }
         #resultCard .card-logo {
             width: 110px;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
+        }
+        #sadOwlCanvas {
+            display: block;
+            margin: 2px auto 4px;
+            width: 160px;
+            height: 150px;
         }
         #resultCard .card-title {
             color: #c41b5a;
@@ -771,6 +802,9 @@
             ✨ 진화하면 <b>특수 능력</b> 획득 (방어/자석/2배점수/무적)<br>
             🏆 <b>총 20레벨</b>에 도전하세요!
         </div>
+        <div class="music-hint" id="musicHint">
+            🎵 화면을 한 번 터치하면 경쾌한 음악이 시작돼요!
+        </div>
         <div class="back-warning">
             ⚠️ <b>뒤로가기 버튼을 누르면</b><br>
             진행 상황이 저장되지 않고 초기화되어<br>
@@ -785,6 +819,7 @@
             </div>
             <button class="btn" onclick="startGame()">게임시작 🌸</button>
             <button class="btn share-btn" onclick="shareGame()">💬 친구에게 공유하기</button>
+            <div class="game-credit">created by songchisup</div>
         </div>
     </div>
 
@@ -801,7 +836,8 @@
     // === 응모 폼 주소 ===
     const FORM_URL = "https://forms.gle/PJzWfb25r6FWZR9U6";
     // === 축제 정보 페이지 (방문 시 생명력 +1 보너스) ===
-    const FESTIVAL_INFO_URL = "https://www.yongpyong.co.kr/";
+    // 클릭 통계 추적용 단축 URL
+    const FESTIVAL_INFO_URL = "https://url.kr/72lwqq";
     let hasVisitedInfo = false; // 이번 세션에 정보 페이지 방문 여부
     const BONUS_LIFE_FROM_VISIT = 1; // 방문 보너스 라이프
     
@@ -836,6 +872,7 @@
     const gameLogo = document.getElementById('gameLogo');
     const toastEl = document.getElementById('toast');
     const btnRow = document.getElementById('btnRow');
+    const musicHintEl = document.getElementById('musicHint');
 
     let DPR = Math.min(window.devicePixelRatio || 1, 2);
     let W = 0, H = 0;
@@ -867,6 +904,43 @@
             try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
         }
     }
+    
+    // === 오프닝 BGM 자동 시작 ===
+    // 모바일 브라우저는 사용자 상호작용 전에 오디오를 못 틀기 때문에
+    // 첫 터치/클릭 발생 시 즉시 BGM 시작
+    let openingBgmTriggered = false;
+    function tryStartOpeningBgm() {
+        if (openingBgmTriggered) return;
+        openingBgmTriggered = true;
+        initAudio();
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        if (soundOn) {
+            startBgm();
+            // 음악이 시작되면 안내 박스를 부드럽게 사라지게
+            if (musicHintEl) {
+                musicHintEl.style.transition = 'opacity 0.6s, transform 0.6s';
+                musicHintEl.style.opacity = '0';
+                musicHintEl.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    if (musicHintEl) musicHintEl.style.display = 'none';
+                }, 700);
+            }
+        }
+    }
+    
+    // 페이지 로드 시 첫 터치/클릭/키 입력 감지 (한 번만)
+    function setupOpeningBgmListener() {
+        const triggerEvents = ['touchstart', 'click', 'keydown', 'pointerdown'];
+        function handler() {
+            tryStartOpeningBgm();
+            // 일회성: 이벤트 제거
+            triggerEvents.forEach(ev => document.removeEventListener(ev, handler));
+        }
+        triggerEvents.forEach(ev => document.addEventListener(ev, handler, { passive: true, once: false }));
+    }
+    setupOpeningBgmListener();
     function playSound(freq, duration, type='sine', volume=0.15) {
         if (!soundOn || !audioCtx) return;
         try {
@@ -2761,27 +2835,80 @@
         ec.stroke();
         ec.restore();
         
-        // === 오른쪽 날개 (손 흔들기!) ===
+        // === 오른쪽 날개 (트로피 들기!) ===
         ec.save();
-        ec.translate(20 * s, -5 * s);
-        // 위로 들고 흔들기
-        const waveAngle = -1.5 + Math.sin(wavePhase) * 0.4;
-        ec.rotate(waveAngle);
+        ec.translate(26 * s, -2 * s);
+        // 트로피를 들어올린 각도 (살짝 흔들흔들)
+        const trophyWave = -1.0 + Math.sin(wavePhase) * 0.2;
+        ec.rotate(trophyWave);
+        // 날개
         ec.fillStyle = '#e89a5c';
         ec.strokeStyle = '#3d2817';
+        ec.lineWidth = 2.5;
         ec.beginPath();
-        ec.ellipse(0, -18 * s, 10 * s, 22 * s, 0, 0, Math.PI * 2);
+        ec.ellipse(0, -12 * s, 9 * s, 18 * s, 0, 0, Math.PI * 2);
         ec.fill();
         ec.stroke();
-        // 손가락 깃털 디테일
+        ec.restore();
+        
+        // === 트로피 (머리 위 오른쪽에 크게) ===
+        ec.save();
+        ec.translate(34 * s, -44 * s);
+        const trophyBob = Math.sin(wavePhase) * 2;
+        ec.translate(0, trophyBob);
+        const ts = s * 1.15; // 트로피 크기
+        // 트로피 컵 (금색 그라데이션)
+        const trophyGrad = ec.createLinearGradient(0, -12 * ts, 0, 5 * ts);
+        trophyGrad.addColorStop(0, '#fff3a0');
+        trophyGrad.addColorStop(0.5, '#ffd700');
+        trophyGrad.addColorStop(1, '#e6a800');
+        ec.fillStyle = trophyGrad;
+        ec.strokeStyle = '#b8860b';
+        ec.lineWidth = 2;
+        // 컵 몸체
         ec.beginPath();
-        ec.moveTo(-3 * s, -35 * s);
-        ec.lineTo(-5 * s, -40 * s);
-        ec.moveTo(0, -38 * s);
-        ec.lineTo(0, -42 * s);
-        ec.moveTo(3 * s, -35 * s);
-        ec.lineTo(5 * s, -40 * s);
+        ec.moveTo(-11 * ts, -12 * ts);
+        ec.lineTo(11 * ts, -12 * ts);
+        ec.lineTo(8 * ts, 0);
+        ec.quadraticCurveTo(0, 8 * ts, -8 * ts, 0);
+        ec.closePath();
+        ec.fill();
         ec.stroke();
+        // 손잡이 양쪽
+        ec.lineWidth = 2.5;
+        ec.beginPath();
+        ec.arc(-12 * ts, -7 * ts, 5 * ts, Math.PI * 0.5, Math.PI * 1.5, true);
+        ec.stroke();
+        ec.beginPath();
+        ec.arc(12 * ts, -7 * ts, 5 * ts, Math.PI * 1.5, Math.PI * 0.5, true);
+        ec.stroke();
+        // 트로피 받침대
+        ec.fillStyle = '#e6a800';
+        ec.strokeStyle = '#b8860b';
+        ec.lineWidth = 2;
+        ec.beginPath();
+        ec.rect(-3 * ts, 7 * ts, 6 * ts, 6 * ts);
+        ec.fill(); ec.stroke();
+        ec.fillStyle = '#b8860b';
+        ec.beginPath();
+        ec.rect(-9 * ts, 12 * ts, 18 * ts, 5 * ts);
+        ec.fill(); ec.stroke();
+        // 별 표시
+        ec.fillStyle = '#ff6b00';
+        ec.font = `bold ${10 * ts}px sans-serif`;
+        ec.textAlign = 'center';
+        ec.textBaseline = 'middle';
+        ec.fillText('★', 0, -5 * ts);
+        // 트로피 반짝임
+        const shine = Math.sin(wavePhase * 1.5) * 0.5 + 0.5;
+        ec.fillStyle = `rgba(255, 255, 255, ${shine})`;
+        ec.beginPath();
+        ec.arc(-5 * ts, -7 * ts, 2 * ts, 0, Math.PI * 2);
+        ec.fill();
+        // 반짝임 별 (트로피 주변)
+        ec.fillStyle = `rgba(255, 230, 100, ${shine})`;
+        ec.font = `${6 * ts}px sans-serif`;
+        ec.fillText('✨', 13 * ts, -10 * ts);
         ec.restore();
         
         // 머리
@@ -2911,6 +3038,213 @@
         ec.restore();
     }
     
+    // === 우는 부엉이 그리기 (게임오버 화면) ===
+    function drawCryingOwl(ec, cx, cy, sz, t) {
+        ec.save();
+        ec.translate(cx, cy);
+        const s = sz / 80;
+        
+        // 풀죽은 느낌 - 살짝 작게 웅크림
+        ec.scale(0.95, 0.95);
+        // 어깨 들썩임 (훌쩍이는 느낌)
+        const sob = Math.sin(t * 0.08) * 1.5;
+        ec.translate(0, sob);
+        
+        // 그림자
+        ec.fillStyle = 'rgba(0, 0, 0, 0.15)';
+        ec.beginPath();
+        ec.ellipse(0, 45 * s, sz * 0.38, 5, 0, 0, Math.PI * 2);
+        ec.fill();
+        
+        // 몸통
+        ec.fillStyle = '#f9b87a';
+        ec.strokeStyle = '#3d2817';
+        ec.lineWidth = 2.5;
+        ec.beginPath();
+        ec.ellipse(0, 5 * s, 32 * s, 35 * s, 0, 0, Math.PI * 2);
+        ec.fill();
+        ec.stroke();
+        
+        // === 양쪽 날개 (몸통 옆, 살짝 처진 느낌) ===
+        // 왼쪽 날개
+        ec.save();
+        ec.translate(-28 * s, 8 * s);
+        ec.rotate(-0.2 + Math.sin(t * 0.08) * 0.08);
+        ec.fillStyle = '#e89a5c';
+        ec.strokeStyle = '#3d2817';
+        ec.lineWidth = 2.5;
+        ec.beginPath();
+        ec.ellipse(-3 * s, 0, 11 * s, 20 * s, 0, 0, Math.PI * 2);
+        ec.fill();
+        ec.stroke();
+        ec.restore();
+        
+        // 오른쪽 날개
+        ec.save();
+        ec.translate(28 * s, 8 * s);
+        ec.rotate(0.2 - Math.sin(t * 0.08) * 0.08);
+        ec.fillStyle = '#e89a5c';
+        ec.strokeStyle = '#3d2817';
+        ec.lineWidth = 2.5;
+        ec.beginPath();
+        ec.ellipse(3 * s, 0, 11 * s, 20 * s, 0, 0, Math.PI * 2);
+        ec.fill();
+        ec.stroke();
+        ec.restore();
+        
+        // 머리
+        ec.fillStyle = '#f9b87a';
+        ec.strokeStyle = '#3d2817';
+        ec.lineWidth = 2.5;
+        ec.beginPath();
+        ec.arc(0, -20 * s, 28 * s, 0, Math.PI * 2);
+        ec.fill();
+        ec.stroke();
+        
+        // 귀 (살짝 처진 느낌)
+        ec.beginPath();
+        ec.moveTo(-22 * s, -38 * s); ec.lineTo(-16 * s, -50 * s); ec.lineTo(-8 * s, -36 * s);
+        ec.closePath(); ec.fill(); ec.stroke();
+        ec.beginPath();
+        ec.moveTo(22 * s, -38 * s); ec.lineTo(16 * s, -50 * s); ec.lineTo(8 * s, -36 * s);
+        ec.closePath(); ec.fill(); ec.stroke();
+        
+        // 얼굴
+        ec.fillStyle = '#fff4d6';
+        ec.beginPath();
+        ec.arc(0, -16 * s, 20 * s, 0, Math.PI * 2);
+        ec.fill();
+        ec.strokeStyle = '#3d2817';
+        ec.lineWidth = 2;
+        ec.stroke();
+        
+        // === 슬픈 눈 (꼭 감은 채 ㅠㅠ 모양) ===
+        ec.strokeStyle = '#3d2817';
+        ec.lineWidth = 2.5;
+        ec.lineCap = 'round';
+        // 왼쪽 눈 (아래로 볼록한 곡선 - 찡그림)
+        ec.beginPath();
+        ec.arc(-9 * s, -15 * s, 5 * s, Math.PI * 1.15, Math.PI * 1.85);
+        ec.stroke();
+        // 오른쪽 눈
+        ec.beginPath();
+        ec.arc(9 * s, -15 * s, 5 * s, Math.PI * 1.15, Math.PI * 1.85);
+        ec.stroke();
+        
+        // 슬픈 눈썹 (八자 - 안쪽이 올라감)
+        ec.lineWidth = 2;
+        ec.beginPath();
+        ec.moveTo(-15 * s, -23 * s);
+        ec.lineTo(-4 * s, -20 * s);
+        ec.moveTo(15 * s, -23 * s);
+        ec.lineTo(4 * s, -20 * s);
+        ec.stroke();
+        
+        // === 눈물 (양쪽 눈에서 흐름) ===
+        ec.fillStyle = 'rgba(120, 200, 255, 0.85)';
+        ec.strokeStyle = 'rgba(80, 160, 230, 0.9)';
+        ec.lineWidth = 1;
+        // 눈물 방울은 시간에 따라 떨어짐
+        const tearCycle = (t * 0.04) % 1;
+        const tearCycle2 = ((t * 0.04) + 0.5) % 1;
+        // 왼쪽 눈물
+        const ltY = -10 * s + tearCycle * 28 * s;
+        ec.beginPath();
+        ec.ellipse(-11 * s, ltY, 2.8 * s, 4 * s, 0, 0, Math.PI * 2);
+        ec.fill(); ec.stroke();
+        // 왼쪽 두번째 눈물
+        const ltY2 = -10 * s + tearCycle2 * 28 * s;
+        ec.beginPath();
+        ec.ellipse(-11 * s, ltY2, 2.3 * s, 3.3 * s, 0, 0, Math.PI * 2);
+        ec.fill(); ec.stroke();
+        // 오른쪽 눈물
+        const rtY = -10 * s + tearCycle2 * 28 * s;
+        ec.beginPath();
+        ec.ellipse(11 * s, rtY, 2.8 * s, 4 * s, 0, 0, Math.PI * 2);
+        ec.fill(); ec.stroke();
+        // 오른쪽 두번째 눈물
+        const rtY2 = -10 * s + tearCycle * 28 * s;
+        ec.beginPath();
+        ec.ellipse(11 * s, rtY2, 2.3 * s, 3.3 * s, 0, 0, Math.PI * 2);
+        ec.fill(); ec.stroke();
+        
+        // 볼터치 (눈물로 발그레)
+        ec.fillStyle = 'rgba(255, 130, 130, 0.5)';
+        ec.beginPath();
+        ec.arc(-13 * s, -8 * s, 4 * s, 0, Math.PI * 2);
+        ec.arc(13 * s, -8 * s, 4 * s, 0, Math.PI * 2);
+        ec.fill();
+        
+        // 부리 (슬프게 벌어진 입 - 우는 모양)
+        ec.fillStyle = '#ff8a4c';
+        ec.strokeStyle = '#3d2817';
+        ec.lineWidth = 1.5;
+        ec.beginPath();
+        ec.moveTo(0, -11 * s);
+        ec.lineTo(-3.5 * s, -6 * s);
+        ec.lineTo(3.5 * s, -6 * s);
+        ec.closePath();
+        ec.fill(); ec.stroke();
+        // 우는 입 (작게 벌어진 타원)
+        ec.fillStyle = '#a83246';
+        ec.beginPath();
+        ec.ellipse(0, -3 * s, 3 * s, 2.5 * s, 0, 0, Math.PI * 2);
+        ec.fill();
+        
+        // 배 깃털
+        ec.fillStyle = '#3d2817';
+        ec.beginPath();
+        ec.ellipse(-5 * s, 14 * s, 1.5 * s, 3 * s, 0, 0, Math.PI * 2);
+        ec.ellipse(0, 16 * s, 1.5 * s, 3 * s, 0, 0, Math.PI * 2);
+        ec.ellipse(5 * s, 14 * s, 1.5 * s, 3 * s, 0, 0, Math.PI * 2);
+        ec.fill();
+        
+        // 발
+        ec.fillStyle = '#ff8a4c';
+        ec.strokeStyle = '#3d2817';
+        ec.lineWidth = 1.5;
+        ec.beginPath();
+        ec.ellipse(-10 * s, 37 * s, 7 * s, 4 * s, 0, 0, Math.PI * 2);
+        ec.fill(); ec.stroke();
+        ec.beginPath();
+        ec.ellipse(10 * s, 37 * s, 7 * s, 4 * s, 0, 0, Math.PI * 2);
+        ec.fill(); ec.stroke();
+        
+        ec.restore();
+    }
+    
+    // 우는 부엉이 애니메이션 루프
+    let sadOwlAnimId = null;
+    function startSadOwlAnimation() {
+        const sCanvas = document.getElementById('sadOwlCanvas');
+        if (!sCanvas) return;
+        const sCtx = sCanvas.getContext('2d');
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const cssW = 160, cssH = 150;
+        sCanvas.width = cssW * dpr;
+        sCanvas.height = cssH * dpr;
+        sCanvas.style.width = cssW + 'px';
+        sCanvas.style.height = cssH + 'px';
+        sCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        
+        let t = 0;
+        // 이전 애니메이션 정리
+        if (sadOwlAnimId) cancelAnimationFrame(sadOwlAnimId);
+        
+        function loop() {
+            // 캔버스가 사라졌으면 중단
+            if (!document.getElementById('sadOwlCanvas')) {
+                sadOwlAnimId = null;
+                return;
+            }
+            t++;
+            sCtx.clearRect(0, 0, cssW, cssH);
+            drawCryingOwl(sCtx, cssW / 2, cssH / 2 + 8, 78, t);
+            sadOwlAnimId = requestAnimationFrame(loop);
+        }
+        loop();
+    }
+    
     function endGame(isWin) {
         gameActive = false;
         stopBgm();
@@ -2921,6 +3255,11 @@
         document.querySelector('.overlay-logo').style.display = '';
         msgTitle.style.display = '';
         msgSub.style.display = '';
+        
+        // 결과 화면에서도 BGM 다시 흐르게 (잠시 정지 후 재개)
+        setTimeout(() => {
+            if (soundOn && !bgmStarted) startBgm();
+        }, 500);
         
         // 기존 카드 제거
         ['resultCard', 'levelClearCard', 'endingScene'].forEach(id => {
@@ -2937,6 +3276,7 @@
             <div class="magnolia-deco bl">🌸</div>
             <div class="magnolia-deco br">🌸</div>
             <img class="card-logo" src="${LOGO_DATA_URL}" alt="MONA YONG PYONG">
+            <canvas id="sadOwlCanvas" width="160" height="150"></canvas>
             <div class="card-title">산목련 축제</div>
             <div class="card-subtitle">나의 점수</div>
             <div class="score-label">SCORE</div>
@@ -2948,6 +3288,9 @@
             </div>
         `;
         overlay.insertBefore(card, btnRow);
+        
+        // 우는 부엉이 애니메이션 시작
+        startSadOwlAnimation();
         
         // 타이틀/서브타이틀
         msgTitle.textContent = "수고하셨어요!";
@@ -3006,7 +3349,7 @@
     function renderResultCardToCanvas() {
         return new Promise((resolve, reject) => {
             try {
-                const cw = 640, ch = 800;
+                const cw = 640, ch = 920;
                 const c = document.createElement('canvas');
                 c.width = cw; c.height = ch;
                 const cx = c.getContext('2d');
@@ -3037,11 +3380,15 @@
                 const logoImg = new Image();
                 logoImg.onload = () => {
                     // 로고 (가로 220px 기준)
-                    const logoW = 240;
+                    const logoW = 220;
                     const logoH = logoW * (logoImg.height / logoImg.width);
-                    cx.drawImage(logoImg, cw/2 - logoW/2, cardY + 70, logoW, logoH);
+                    cx.drawImage(logoImg, cw/2 - logoW/2, cardY + 50, logoW, logoH);
                     
-                    let cursorY = cardY + 70 + logoH + 35;
+                    let cursorY = cardY + 50 + logoH + 20;
+                    
+                    // 우는 부엉이 (게임오버 시) 그리기
+                    drawCryingOwl(cx, cw/2, cursorY + 55, 110, 30);
+                    cursorY += 130;
                     
                     // 타이틀
                     cx.fillStyle = '#c41b5a';
