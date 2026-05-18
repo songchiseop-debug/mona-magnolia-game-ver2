@@ -6,24 +6,24 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#c41b5a">
-    <meta name="description" content="발왕산 산목련 축제 - 부엉이와 함께 떨어지는 산목련을 받고 점수를 모아 응모하세요!">
+    <meta name="description" content="2026 산목련 힐링 페스티벌 - 부엉이와 함께 떨어지는 산목련을 받고 점수를 모아 응모하세요!">
     
     <!-- 카톡/페이스북 공유 미리보기 -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="🦉🌸 모나용평 산목련 축제 게임">
+    <meta property="og:title" content="🦉🌸 2026 산목련 힐링 페스티벌 게임">
     <meta property="og:description" content="부엉이와 함께 떨어지는 산목련을 받아보세요! 점수 캡처 후 응모 이벤트 참여 가능.">
     <meta property="og:locale" content="ko_KR">
     
     <!-- 트위터 카드 -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="🦉🌸 모나용평 산목련 축제 게임">
-    <meta name="twitter:description" content="부엉이와 함께하는 발왕산 봄날의 모험">
+    <meta name="twitter:title" content="🦉🌸 2026 산목련 힐링 페스티벌 게임">
+    <meta name="twitter:description" content="부엉이와 함께하는 2026 산목련 힐링 페스티벌">
     
     <!-- iOS 홈화면 추가 시 앱 이름 -->
-    <meta name="apple-mobile-web-app-title" content="산목련 축제">
+    <meta name="apple-mobile-web-app-title" content="산목련 힐링 페스티벌">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <title>모나용평 부엉이의 산목련 축제 🦉🌸</title>
+    <title>2026 산목련 힐링 페스티벌 🦉🌸</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         html, body { 
@@ -36,7 +36,7 @@
             -webkit-user-select: none;
             position: fixed;
         }
-        canvas { 
+        #gameCanvas { 
             display: block; 
             position: absolute;
             top: 0; left: 0;
@@ -342,14 +342,15 @@
             position: relative;
         }
         #resultCard .card-logo {
-            width: 110px;
-            margin-bottom: 6px;
+            width: 100px;
+            margin-bottom: 2px;
         }
         #sadOwlCanvas {
             display: block;
-            margin: 2px auto 4px;
-            width: 160px;
-            height: 150px;
+            position: static;
+            margin: 0 auto;
+            width: 130px;
+            height: 120px;
         }
         #resultCard .card-title {
             color: #c41b5a;
@@ -912,8 +913,8 @@
     <div id="overlay">
         <img class="overlay-logo" id="overlayLogo" alt="모나용평">
         <div class="owl-icon">🦉</div>
-        <h1 id="msg-title">산목련 축제</h1>
-        <h2 id="msg-sub">발왕산 봄날의 모험</h2>
+        <h1 id="msg-title">산목련 힐링 페스티벌</h1>
+        <h2 id="msg-sub">발왕산에서 즐기는 봄날의 힐링</h2>
         <div class="controls-hint" id="hint">
             🖐️ <b>화면을 드래그</b>해서 부엉이를 움직이세요<br>
             🌸 <b>산목련</b>을 받으면 +10점 (레벨 클리어!)<br>
@@ -934,7 +935,7 @@
         </div>
         <div class="btn-row" id="btnRow">
             <button class="btn info-btn" id="festivalInfoBtn" onclick="visitFestivalInfo()">
-                🎁 2026년 발왕산 산목련 축제 정보
+                🎁 2026 산목련 힐링 페스티벌 정보
             </button>
             <div class="bonus-hint" id="bonusHint">
                 💡 위 버튼을 누르고 시작하면 <b>생명력 +1</b>!
@@ -963,8 +964,8 @@
     const BONUS_LIFE_FROM_VISIT = 1; // 방문 보너스 라이프
     
     // === 공유용 메시지 ===
-    const SHARE_TITLE = "🦉🌸 모나용평 산목련 축제 게임";
-    const SHARE_TEXT = "발왕산 봄날, 부엉이와 함께 산목련을 받아보세요! 🌸\n총 20레벨에 도전하고 점수로 응모 이벤트 참여! 🏆";
+    const SHARE_TITLE = "🦉🌸 2026 산목련 힐링 페스티벌 게임";
+    const SHARE_TEXT = "2026 산목련 힐링 페스티벌 🌸\n부엉이와 함께 산목련을 받아보세요!\n총 20레벨에 도전하고 점수로 응모 이벤트 참여! 🏆";
     
     function getShareUrl() {
         // 항상 현재 페이지 URL 사용
@@ -2258,7 +2259,7 @@
         const startHint = document.getElementById('bonusHint');
         if (startBtn && hasVisitedInfo) {
             startBtn.classList.add('visited');
-            startBtn.innerHTML = '✓ 2026년 발왕산 산목련 축제 정보';
+            startBtn.innerHTML = '✓ 2026 산목련 힐링 페스티벌 정보';
         }
         if (startHint && hasVisitedInfo) {
             startHint.classList.add('activated');
@@ -2268,7 +2269,7 @@
         const endBtn = document.getElementById('festivalInfoBtnEnd');
         if (endBtn && hasVisitedInfo) {
             endBtn.classList.add('visited');
-            endBtn.innerHTML = '✓ 2026년 발왕산 산목련 축제 정보';
+            endBtn.innerHTML = '✓ 2026 산목련 힐링 페스티벌 정보';
         }
     }
     
@@ -2826,7 +2827,7 @@
         btnRow.innerHTML = `
             <button class="btn" onclick="captureAndApply()">📸 점수 캡처 & 응모하기</button>
             <button class="btn info-btn ${hasVisitedInfo ? 'visited' : ''}" id="festivalInfoBtnEnd" onclick="visitFestivalInfo()">
-                ${hasVisitedInfo ? '✓' : '🎁'} 2026년 발왕산 산목련 축제 정보
+                ${hasVisitedInfo ? '✓' : '🎁'} 2026 산목련 힐링 페스티벌 정보
             </button>
             <button class="btn share-btn" onclick="shareGame()">💬 친구에게 공유하기</button>
             <button class="btn secondary" onclick="startGame()">🦉 처음부터 다시</button>
@@ -3411,7 +3412,7 @@
         if (!sCanvas) return;
         const sCtx = sCanvas.getContext('2d');
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        const cssW = 160, cssH = 150;
+        const cssW = 130, cssH = 120;
         sCanvas.width = cssW * dpr;
         sCanvas.height = cssH * dpr;
         sCanvas.style.width = cssW + 'px';
@@ -3430,7 +3431,7 @@
             }
             t++;
             sCtx.clearRect(0, 0, cssW, cssH);
-            drawCryingOwl(sCtx, cssW / 2, cssH / 2 + 8, 78, t);
+            drawCryingOwl(sCtx, cssW / 2, cssH / 2 + 4, 66, t);
             sadOwlAnimId = requestAnimationFrame(loop);
         }
         loop();
@@ -3470,8 +3471,8 @@
             <div class="magnolia-deco bl">🌸</div>
             <div class="magnolia-deco br">🌸</div>
             <img class="card-logo" src="${LOGO_DATA_URL}" alt="MONA YONG PYONG">
-            <canvas id="sadOwlCanvas" width="160" height="150"></canvas>
-            <div class="card-title">산목련 축제</div>
+            <canvas id="sadOwlCanvas" width="130" height="120"></canvas>
+            <div class="card-title">산목련 힐링 페스티벌</div>
             <div class="card-subtitle">나의 점수</div>
             <div class="score-label">SCORE</div>
             <div class="score-num">${score}</div>
@@ -3494,7 +3495,7 @@
         btnRow.innerHTML = `
             <button class="btn" onclick="captureAndApply()">📸 점수 캡처 & 응모하기</button>
             <button class="btn info-btn ${hasVisitedInfo ? 'visited' : ''}" id="festivalInfoBtnEnd" onclick="visitFestivalInfo()">
-                ${hasVisitedInfo ? '✓' : '🎁'} 2026년 발왕산 산목련 축제 정보
+                ${hasVisitedInfo ? '✓' : '🎁'} 2026 산목련 힐링 페스티벌 정보
             </button>
             <button class="btn share-btn" onclick="shareGame()">💬 친구에게 공유하기</button>
             <button class="btn secondary" onclick="startGame()">🦉 다시 도전</button>
@@ -3596,7 +3597,7 @@
                     cx.fillStyle = '#c41b5a';
                     cx.font = 'bold 22px "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
                     cx.textAlign = 'center';
-                    cx.fillText('🌸  산목련 축제  🌸', cw/2, cursorY);
+                    cx.fillText('🌸  산목련 힐링 페스티벌  🌸', cw/2, cursorY);
                     cursorY += 38;
                     
                     // 서브타이틀
@@ -3655,7 +3656,7 @@
                     // 하단 워터마크
                     cx.fillStyle = '#999';
                     cx.font = '14px sans-serif';
-                    cx.fillText('발왕산 산목련 축제 · MONA YONG PYONG', cw/2, ch - 35);
+                    cx.fillText('2026 산목련 힐링 페스티벌 · MONA YONG PYONG', cw/2, ch - 35);
                     
                     resolve(c.toDataURL('image/png'));
                 };
