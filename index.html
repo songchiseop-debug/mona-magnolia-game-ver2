@@ -628,14 +628,16 @@
             flex-shrink: 0;
         }
         @keyframes endingFadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
         #endingCanvas {
             display: block;
             width: 100%;
             height: 220px;
             flex-shrink: 0;
+            position: relative;
+            z-index: 1;
         }
         .ending-overlay {
             padding: 14px 18px 18px;
@@ -763,6 +765,92 @@
             display: flex; align-items: center; justify-content: center;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
+        /* 일시정지 버튼 (사운드 버튼 왼쪽) */
+        #pauseBtn {
+            position: absolute;
+            bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+            right: 64px;
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #c41b5a;
+            font-size: 18px;
+            z-index: 6;
+            cursor: pointer;
+            display: none;
+            align-items: center; justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        #pauseBtn.visible { display: flex; }
+        
+        /* 일시정지 화면 */
+        #pauseOverlay {
+            position: absolute; inset: 0;
+            background: rgba(74, 86, 41, 0.55);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            display: none;
+            align-items: center; justify-content: center;
+            z-index: 20;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #pauseOverlay.show { display: flex; }
+        .pause-card {
+            background: linear-gradient(180deg, #fff 0%, #fff8e8 100%);
+            border-radius: 24px;
+            padding: 32px 28px;
+            text-align: center;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+            border: 4px solid #c41b5a;
+            max-width: 300px;
+            width: 100%;
+            animation: pausePop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes pausePop {
+            0% { transform: scale(0.7); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .pause-icon {
+            font-size: 52px;
+            margin-bottom: 4px;
+        }
+        .pause-title {
+            font-size: 26px;
+            font-weight: 900;
+            color: #c41b5a;
+            margin-bottom: 4px;
+            text-shadow: 2px 2px 0 #fed330;
+        }
+        .pause-sub {
+            font-size: 13px;
+            color: #5a4434;
+            font-weight: 500;
+            margin-bottom: 14px;
+        }
+        .pause-stats {
+            background: rgba(196, 27, 90, 0.06);
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 18px;
+            font-size: 13px;
+            color: #5a4434;
+            line-height: 1.8;
+        }
+        .pause-stats strong {
+            color: #c41b5a;
+            font-weight: 800;
+        }
+        .btn.pause-resume-btn {
+            background: linear-gradient(180deg, #6b7d3a 0%, #4a5629 100%);
+            box-shadow: 0 5px 0 #2f3819, 0 7px 18px rgba(47, 56, 25, 0.3);
+            width: 100%;
+            max-width: 240px;
+        }
+        .btn.pause-resume-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 #2f3819, 0 4px 10px rgba(47, 56, 25, 0.3);
+        }
         
         /* 캡처 모드: 결과카드만 보이게 */
         body.capturing #overlay > *:not(#resultCard) { 
@@ -786,6 +874,18 @@
     <div id="combo"></div>
 
     <button id="soundBtn" onclick="toggleSound()">🔊</button>
+    <button id="pauseBtn" onclick="togglePause()">⏸️</button>
+    
+    <!-- 일시정지 화면 -->
+    <div id="pauseOverlay">
+        <div class="pause-card">
+            <div class="pause-icon">⏸️</div>
+            <div class="pause-title">잠시 멈춤</div>
+            <div class="pause-sub">버튼을 누르면 이어서 진행돼요</div>
+            <div class="pause-stats" id="pauseStats"></div>
+            <button class="btn pause-resume-btn" onclick="togglePause()">▶ 이어하기</button>
+        </div>
+    </div>
 
     <div id="overlay">
         <img class="overlay-logo" id="overlayLogo" alt="모나용평">
@@ -873,6 +973,9 @@
     const toastEl = document.getElementById('toast');
     const btnRow = document.getElementById('btnRow');
     const musicHintEl = document.getElementById('musicHint');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const pauseOverlay = document.getElementById('pauseOverlay');
+    const pauseStatsEl = document.getElementById('pauseStats');
 
     let DPR = Math.min(window.devicePixelRatio || 1, 2);
     let W = 0, H = 0;
@@ -881,6 +984,7 @@
     let life = 3;
     let stage = 1;
     let gameActive = false;
+    let isPaused = false;
     let items = [];
     let particles = [];
     let owl = { x: 0, y: 0, w: 80, h: 80, vy: 0, targetX: 0, wingPhase: 0, blinkTimer: 0, squish: 0 };
@@ -2198,6 +2302,45 @@
         }
     }
     
+    // === 일시정지 / 이어하기 ===
+    function togglePause() {
+        // 게임이 진행 중일 때만 동작
+        if (!gameActive && !isPaused) return;
+        
+        if (!isPaused) {
+            // === 일시정지 ===
+            isPaused = true;
+            gameActive = false; // 게임 루프 정지
+            
+            // 현재 상태를 일시정지 화면에 표시
+            if (pauseStatsEl) {
+                pauseStatsEl.innerHTML = `
+                    레벨 <strong>LV ${stage}</strong> · 점수 <strong>${score}</strong><br>
+                    생명 <strong>${'♥'.repeat(Math.max(0, life))}</strong> · 콤보 <strong>${combo}</strong>
+                `;
+            }
+            pauseOverlay.classList.add('show');
+            pauseBtn.textContent = '▶️';
+            
+            // 배경음악도 멈춤
+            stopBgm();
+            
+        } else {
+            // === 이어하기 ===
+            isPaused = false;
+            gameActive = true;
+            pauseOverlay.classList.remove('show');
+            pauseBtn.textContent = '⏸️';
+            
+            // 배경음악 재개
+            if (soundOn) startBgm();
+            
+            // 게임 루프 재시작 (멈춰있던 동안의 시간 보정)
+            lastSpawnTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+    }
+    
     function startGame() {
         initAudio();
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
@@ -2214,7 +2357,13 @@
         levelClearing = false;
         levelConfig = getLevelConfig(stage);
         gameActive = true;
+        isPaused = false;
         overlay.style.display = 'none';
+        pauseOverlay.classList.remove('show');
+        
+        // 일시정지 버튼 표시 + 아이콘 초기화
+        pauseBtn.classList.add('visible');
+        pauseBtn.textContent = '⏸️';
         
         // 결과 카드 / 레벨 클리어 화면 제거
         const oldCard = document.getElementById('resultCard');
@@ -2246,7 +2395,12 @@
         levelConfig = getLevelConfig(stage);
         items = []; particles = []; combo = 0;
         gameActive = true;
+        isPaused = false;
         overlay.style.display = 'none';
+        
+        // 일시정지 버튼 다시 표시
+        pauseBtn.classList.add('visible');
+        pauseBtn.textContent = '⏸️';
         
         const oldClear = document.getElementById('levelClearCard');
         if (oldClear) oldClear.remove();
@@ -2506,6 +2660,9 @@
     // === 레벨 클리어 화면 ===
     function showLevelClear() {
         gameActive = false;
+        isPaused = false;
+        pauseBtn.classList.remove('visible');
+        pauseOverlay.classList.remove('show');
         levelClearing = true;
         playGold();
         setTimeout(() => playGold(), 200);
@@ -2604,6 +2761,9 @@
     
     function triggerEnding() {
         gameActive = false;
+        isPaused = false;
+        pauseBtn.classList.remove('visible');
+        pauseOverlay.classList.remove('show');
         stopBgm();
         playGold();
         setTimeout(() => playGold(), 200);
@@ -2660,18 +2820,28 @@
         const eCanvas = document.getElementById('endingCanvas');
         if (!eCanvas) return;
         const eCtx = eCanvas.getContext('2d');
-        // 다음 프레임에서 측정 (CSS 애니메이션 적용 후 정확한 사이즈)
-        requestAnimationFrame(() => {
-            const rect = eCanvas.getBoundingClientRect();
-            const w = rect.width || 320;
-            const h = 220; // CSS와 일치
+        
+        function setupAndRun() {
+            // 캔버스의 실제 표시 너비 측정 (offsetWidth는 transform 영향 안 받음)
+            let w = eCanvas.offsetWidth;
+            // 측정 실패 시 컨테이너 기반으로 폴백 계산
+            if (!w || w < 10) {
+                const scene = document.getElementById('endingScene');
+                const sw = scene ? scene.offsetWidth : 0;
+                // endingScene max-width 340 - border 4*2 = 332
+                w = (sw && sw > 10) ? (sw - 8) : 332;
+            }
+            const h = 220; // CSS 고정 높이와 일치
             const dpr = Math.min(window.devicePixelRatio || 1, 2);
-            eCanvas.width = w * dpr;
-            eCanvas.height = h * dpr;
-            eCanvas.style.width = w + 'px';
-            eCanvas.style.height = h + 'px';
+            eCanvas.width = Math.round(w * dpr);
+            eCanvas.height = Math.round(h * dpr);
             eCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
             startEndingLoop(eCanvas, eCtx, w, h);
+        }
+        
+        // 레이아웃이 안정된 후 실행 (2프레임 대기)
+        requestAnimationFrame(() => {
+            requestAnimationFrame(setupAndRun);
         });
     }
     
@@ -3247,6 +3417,9 @@
     
     function endGame(isWin) {
         gameActive = false;
+        isPaused = false;
+        pauseBtn.classList.remove('visible');
+        pauseOverlay.classList.remove('show');
         stopBgm();
         overlay.style.display = 'flex';
         hintEl.style.display = 'none';
@@ -3384,11 +3557,19 @@
                     const logoH = logoW * (logoImg.height / logoImg.width);
                     cx.drawImage(logoImg, cw/2 - logoW/2, cardY + 50, logoW, logoH);
                     
-                    let cursorY = cardY + 50 + logoH + 20;
+                    let cursorY = cardY + 50 + logoH + 35;
                     
-                    // 우는 부엉이 (게임오버 시) 그리기
-                    drawCryingOwl(cx, cw/2, cursorY + 55, 110, 30);
-                    cursorY += 130;
+                    // 게임 결과에 따라 부엉이 그리기
+                    // stage >= 20 클리어 = 트로피 든 웃는 부엉이 / 아니면 우는 부엉이
+                    const clearedGame = stage >= 20;
+                    if (clearedGame) {
+                        // 트로피 든 웃는 부엉이 (정지 컷)
+                        drawWavingOwl(cx, cw/2, cursorY + 62, 120, 0.6, 0);
+                    } else {
+                        // 우는 부엉이
+                        drawCryingOwl(cx, cw/2, cursorY + 55, 110, 30);
+                    }
+                    cursorY += 145;
                     
                     // 타이틀
                     cx.fillStyle = '#c41b5a';
