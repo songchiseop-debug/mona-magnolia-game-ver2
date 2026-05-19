@@ -294,6 +294,42 @@
         .btn.info-btn.visited:active {
             box-shadow: 0 2px 0 #1b5e20, 0 4px 10px rgba(27, 94, 32, 0.3);
         }
+        /* 인스타그램 버튼 (인스타 브랜드 그라데이션) */
+        .btn.insta-btn {
+            background: linear-gradient(105deg, #feda75 0%, #fa7e1e 22%, #d62976 52%, #962fbf 78%, #4f5bd5 100%);
+            box-shadow: 0 5px 0 #7a2152, 0 7px 18px rgba(122, 33, 82, 0.35);
+            font-size: 14px;
+            padding: 13px 22px;
+            max-width: 320px;
+        }
+        .btn.insta-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 #7a2152, 0 4px 10px rgba(122, 33, 82, 0.35);
+        }
+        .btn.insta-btn.visited {
+            background: linear-gradient(180deg, #4caf50 0%, #2e7d32 100%);
+            box-shadow: 0 5px 0 #1b5e20, 0 7px 18px rgba(27, 94, 32, 0.3);
+        }
+        .btn.insta-btn.visited:active {
+            box-shadow: 0 2px 0 #1b5e20, 0 4px 10px rgba(27, 94, 32, 0.3);
+        }
+        /* 인스타 보너스 힌트 (보라 톤) */
+        .bonus-hint.insta-hint {
+            background: rgba(214, 41, 118, 0.12);
+            border: 1px dashed #962fbf;
+            color: #7a2152;
+        }
+        .bonus-hint.insta-hint b {
+            color: #962fbf;
+        }
+        .bonus-hint.insta-hint.activated {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid #4caf50;
+            color: #1b5e20;
+        }
+        .bonus-hint.insta-hint.activated b {
+            color: #1b5e20;
+        }
         /* 공유 버튼 (카톡 옐로우 톤) */
         .btn.share-btn {
             background: linear-gradient(180deg, #fee500 0%, #f5c100 100%);
@@ -940,6 +976,12 @@
             <div class="bonus-hint" id="bonusHint">
                 💡 위 버튼을 누르고 시작하면 <b>생명력 +1</b>!
             </div>
+            <button class="btn insta-btn" id="instaBtn" onclick="visitInstagram()">
+                📷 모나용평 인스타그램 팔로우
+            </button>
+            <div class="bonus-hint insta-hint" id="instaHint">
+                💡 팔로우하고 시작하면 <b>부엉이 LV.2부터 시작</b>!
+            </div>
             <button class="btn" onclick="startGame()">게임시작 🌸</button>
             <button class="btn share-btn" onclick="shareGame()">💬 친구에게 공유하기</button>
         </div>
@@ -962,6 +1004,10 @@
     const FESTIVAL_INFO_URL = "https://url.kr/72lwqq";
     let hasVisitedInfo = false; // 이번 세션에 정보 페이지 방문 여부
     const BONUS_LIFE_FROM_VISIT = 1; // 방문 보너스 라이프
+    
+    // === 인스타그램 (방문 시 부엉이 레벨 2부터 시작) ===
+    const INSTAGRAM_URL = "https://www.instagram.com/yongpyongresort_official/";
+    let hasVisitedInsta = false; // 이번 세션에 인스타그램 방문 여부
     
     // === 공유용 메시지 ===
     const SHARE_TITLE = "🦉🌸 2026 산목련 힐링 페스티벌 게임";
@@ -2252,9 +2298,29 @@
         }
     }
     
+    // === 인스타그램 방문 (부엉이 LV.2부터 시작 보너스) ===
+    function visitInstagram() {
+        // 새 탭에서 인스타그램 열기
+        window.open(INSTAGRAM_URL, '_blank', 'noopener,noreferrer');
+        
+        if (!hasVisitedInsta) {
+            hasVisitedInsta = true;
+            updateBonusUI();
+            showToast('📷 부엉이가 LV.2부터 시작해요!', 2500);
+            // 축하 사운드
+            if (audioCtx && soundOn) {
+                playSound(700, 0.1, 'triangle', 0.15);
+                setTimeout(() => playSound(900, 0.15, 'triangle', 0.15), 80);
+                setTimeout(() => playSound(1100, 0.2, 'triangle', 0.15), 180);
+            }
+        } else {
+            showToast('이미 보너스가 적용돼 있어요! 📷', 1800);
+        }
+    }
+    
     // 보너스 UI 갱신 (시작 화면 + 종료 화면 둘 다)
     function updateBonusUI() {
-        // 시작 화면 버튼 상태
+        // 시작 화면 축제 정보 버튼 상태
         const startBtn = document.getElementById('festivalInfoBtn');
         const startHint = document.getElementById('bonusHint');
         if (startBtn && hasVisitedInfo) {
@@ -2265,7 +2331,18 @@
             startHint.classList.add('activated');
             startHint.innerHTML = '✓ <b>생명력 +1 보너스 적용됨!</b> 🎁';
         }
-        // 종료 화면 버튼 상태
+        // 시작 화면 인스타그램 버튼 상태
+        const instaBtn = document.getElementById('instaBtn');
+        const instaHint = document.getElementById('instaHint');
+        if (instaBtn && hasVisitedInsta) {
+            instaBtn.classList.add('visited');
+            instaBtn.innerHTML = '✓ 모나용평 인스타그램 팔로우';
+        }
+        if (instaHint && hasVisitedInsta) {
+            instaHint.classList.add('activated');
+            instaHint.innerHTML = '✓ <b>부엉이 LV.2부터 시작!</b> 📷';
+        }
+        // 종료 화면 축제 정보 버튼 상태
         const endBtn = document.getElementById('festivalInfoBtnEnd');
         if (endBtn && hasVisitedInfo) {
             endBtn.classList.add('visited');
@@ -2374,7 +2451,9 @@
         items = []; particles = []; combo = 0;
         totalCaught = 0; totalGold = 0;
         goldStreak = 0;
-        maxCombo = 0; currentTier = 1; // 진화 시스템 리셋
+        maxCombo = 0;
+        // 인스타그램 방문 보너스: 부엉이 티어 2(견습생)부터 시작
+        currentTier = hasVisitedInsta ? 2 : 1;
         levelCaught = 0;
         levelClearing = false;
         levelConfig = getLevelConfig(stage);
