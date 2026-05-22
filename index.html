@@ -1109,6 +1109,32 @@
             visibility: hidden; 
         }
     </style>
+    
+    <!-- ============================================ -->
+    <!-- Google Analytics 4 (GA4) - 게임 통계 추적 -->
+    <!-- 측정 ID: G-B9J1WRZ37B -->
+    <!-- ============================================ -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-B9J1WRZ37B"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-B9J1WRZ37B', {
+            'page_title': '2026 산목련 힐링 페스티벌 게임',
+            'send_page_view': true
+        });
+        
+        // GA4 이벤트 전송 헬퍼 (오류 안전)
+        window.trackEvent = function(eventName, params) {
+            try {
+                if (typeof gtag === 'function') {
+                    gtag('event', eventName, params || {});
+                }
+            } catch (e) {
+                // GA4 미로드 / 차단된 환경에서도 게임은 정상 작동
+            }
+        };
+    </script>
 </head>
 <body>
 
@@ -1257,6 +1283,13 @@
                 // QR 코드 이미지 설정 (게임 URL 인코딩됨)
                 const qrImg = document.getElementById('qrImage');
                 if (qrImg) qrImg.src = QR_DATA_URL;
+                // 📊 GA4: PC 차단 화면 노출
+                if (typeof trackEvent === 'function') {
+                    trackEvent('desktop_blocked', {
+                        viewport_width: window.innerWidth,
+                        user_agent: navigator.userAgent.substring(0, 100)
+                    });
+                }
             });
         }
     })();
@@ -2588,6 +2621,11 @@
 
     // === 축제 정보 페이지 방문 (생명력 +1 보너스) ===
     function visitFestivalInfo() {
+        // 📊 GA4: 페스티벌 정보 버튼 클릭
+        trackEvent('festival_info_click', {
+            first_time: !hasVisitedInfo  // 처음 클릭인지 (보너스 획득)
+        });
+        
         // 새 탭에서 축제 정보 열기 (게임 흐름 안 끊김)
         window.open(FESTIVAL_INFO_URL, '_blank', 'noopener,noreferrer');
         
@@ -2609,6 +2647,11 @@
     
     // === 인스타그램 방문 (부엉이 LV.2부터 시작 보너스) ===
     function visitInstagram() {
+        // 📊 GA4: 인스타그램 버튼 클릭
+        trackEvent('instagram_click', {
+            first_time: !hasVisitedInsta
+        });
+        
         // 새 탭에서 인스타그램 열기
         window.open(INSTAGRAM_URL, '_blank', 'noopener,noreferrer');
         
@@ -2684,6 +2727,8 @@
             if (!hasSharedGame) {
                 hasSharedGame = true;
                 updateBonusUI();
+                // 📊 GA4: 공유 성공 (실제 공유 또는 복사 완료)
+                trackEvent('share_game', { first_time: true });
                 showToast('💬 시작 콤보 +3 보너스가 적용됐어요!', 2500);
                 if (audioCtx && soundOn) {
                     playSound(750, 0.1, 'triangle', 0.15);
@@ -2775,6 +2820,15 @@
     function startGame() {
         initAudio();
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        
+        // 📊 GA4: 게임 시작 이벤트 (어떤 보너스를 받고 시작했는지도 함께)
+        trackEvent('game_start', {
+            bonus_info: hasVisitedInfo,        // 페스티벌 정보 클릭 여부
+            bonus_insta: hasVisitedInsta,      // 인스타 클릭 여부
+            bonus_share: hasSharedGame,        // 공유 여부
+            start_life: 3 + (hasVisitedInfo ? BONUS_LIFE_FROM_VISIT : 0),
+            start_tier: hasVisitedInsta ? 2 : 1
+        });
         
         score = 0; 
         // 축제 정보 방문 보너스가 있으면 라이프 +1
@@ -3200,6 +3254,15 @@
         pauseBtn.classList.remove('visible');
         pauseOverlay.classList.remove('show');
         stopBgm();
+        
+        // 📊 GA4: 게임 클리어 (레벨 20 완주)
+        trackEvent('game_clear', {
+            final_score: score,
+            total_caught: totalCaught,
+            total_gold: totalGold,
+            max_combo: maxCombo,
+            final_tier: currentTier
+        });
         playGold();
         setTimeout(() => playGold(), 200);
         setTimeout(() => playGold(), 400);
@@ -3856,6 +3919,16 @@
         pauseBtn.classList.remove('visible');
         pauseOverlay.classList.remove('show');
         stopBgm();
+        
+        // 📊 GA4: 게임오버 (라이프 0)
+        trackEvent('game_over', {
+            final_score: score,
+            reached_stage: stage,
+            total_caught: totalCaught,
+            total_gold: totalGold,
+            max_combo: maxCombo,
+            final_tier: currentTier
+        });
         overlay.style.display = 'flex';
         hintEl.style.display = 'none';
         setStartScreenElementsVisible(false);
