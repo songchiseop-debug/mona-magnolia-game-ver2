@@ -367,6 +367,122 @@
             max-width: 300px;
         }
         .controls-hint b { color: #4a5629; }
+        
+        /* === 경품 안내 카드 === */
+        .prize-card {
+            background: linear-gradient(135deg, #fff8e8 0%, #ffe9c8 100%);
+            border-radius: 20px;
+            padding: 16px 16px 14px;
+            margin-bottom: 16px;
+            border: 3px solid #c41b5a;
+            box-shadow: 0 8px 24px rgba(196, 27, 90, 0.15);
+            max-width: 320px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+            height: auto;
+        }
+        .prize-card::before {
+            content: '🌸';
+            position: absolute;
+            top: -8px; left: -8px;
+            font-size: 28px;
+            opacity: 0.35;
+            transform: rotate(-15deg);
+        }
+        .prize-card::after {
+            content: '🌸';
+            position: absolute;
+            bottom: -8px; right: -8px;
+            font-size: 28px;
+            opacity: 0.35;
+            transform: rotate(15deg);
+        }
+        .prize-header {
+            text-align: center;
+            font-size: 17px;
+            font-weight: 900;
+            color: #c41b5a;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 0 #fff8e8;
+            letter-spacing: -0.3px;
+        }
+        .prize-period {
+            background: rgba(255, 255, 255, 0.75);
+            border-radius: 12px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            font-size: 12px;
+            color: #5a4434;
+        }
+        .prize-period-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            line-height: 1.6;
+            word-break: keep-all;
+        }
+        .prize-period-row b {
+            color: #c41b5a;
+            font-weight: 800;
+        }
+        .prize-icon {
+            flex-shrink: 0;
+        }
+        .prize-list {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+        .prize-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 12px;
+            padding: 8px 11px;
+            border: 1.5px solid rgba(196, 27, 90, 0.2);
+        }
+        .prize-rank {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 52px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: -0.3px;
+        }
+        .prize-rank-1 {
+            background: linear-gradient(135deg, #ffd700 0%, #ff8a4c 100%);
+            color: #5a2810;
+            box-shadow: 0 2px 6px rgba(255, 138, 76, 0.4);
+        }
+        .prize-rank-2 {
+            background: linear-gradient(135deg, #c0c8d4 0%, #8d96a8 100%);
+        }
+        .prize-rank-3 {
+            background: linear-gradient(135deg, #d4986e 0%, #a36a3f 100%);
+        }
+        .prize-desc {
+            font-size: 12.5px;
+            color: #4a3a28;
+            line-height: 1.45;
+            word-break: keep-all;
+        }
+        .prize-desc b {
+            color: #c41b5a;
+            font-weight: 800;
+        }
+        .prize-plus {
+            font-size: 11.5px;
+            color: #4a5629;
+            font-weight: 600;
+        }
         /* 뒤로가기 경고 박스 */
         .back-warning {
             background: rgba(255, 235, 100, 0.35);
@@ -1213,6 +1329,39 @@
         <div class="owl-icon">🦉</div>
         <h1 id="msg-title">산목련 힐링 페스티벌</h1>
         <h2 id="msg-sub">발왕산에서 즐기는 봄날의 힐링</h2>
+        
+        <!-- 경품 안내 카드 -->
+        <div class="prize-card">
+            <div class="prize-header">🎁 경품 이벤트 🎁</div>
+            <div class="prize-period">
+                <div class="prize-period-row">
+                    <span class="prize-icon">🗓️</span>
+                    <span>이벤트기간 <b>5/22(금) – 6/14(일)</b></span>
+                </div>
+                <div class="prize-period-row">
+                    <span class="prize-icon">⭐</span>
+                    <span>당첨자 발표 <b>6/17(수)</b></span>
+                </div>
+            </div>
+            <div class="prize-list">
+                <div class="prize-item">
+                    <span class="prize-rank prize-rank-1">1등</span>
+                    <span class="prize-desc">
+                        <b>모나용평 숙박권 1매</b><br>
+                        <span class="prize-plus">+ 발왕산 케이블카 이용권 4매</span>
+                    </span>
+                </div>
+                <div class="prize-item">
+                    <span class="prize-rank prize-rank-2">2–5등</span>
+                    <span class="prize-desc"><b>모나용평 숙박권 1매</b></span>
+                </div>
+                <div class="prize-item">
+                    <span class="prize-rank prize-rank-3">6–20등</span>
+                    <span class="prize-desc"><b>발왕산 케이블카 이용권 2매</b></span>
+                </div>
+            </div>
+        </div>
+        
         <div class="controls-hint" id="hint">
             🖐️ <b>화면을 드래그</b>해서 부엉이를 움직이세요<br>
             🌸 <b>산목련</b>을 받으면 +10점 (레벨 클리어!)<br>
