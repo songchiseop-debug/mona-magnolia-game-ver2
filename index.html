@@ -1482,7 +1482,15 @@
     document.getElementById('overlayLogo').src = LOGO_DATA_URL;
     
     // === 응모 폼 주소 ===
-    const FORM_URL = "https://forms.gle/PJzWfb25r6FWZR9U6";
+    // 미리 채우기 URL 형식 (entry.692602874 = 점수 필드)
+    const FORM_BASE_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdnWamqXnhKW-9LLNsWj4sM67TlMpmvJNS6QgTBwkMG7peAIw/viewform?usp=pp_url";
+    const FORM_SCORE_FIELD = "entry.692602874"; // 최종 점수 입력란
+    // 점수를 자동 입력한 응모 폼 URL 생성
+    function getFormUrlWithScore() {
+        return FORM_BASE_URL + "&" + FORM_SCORE_FIELD + "=" + encodeURIComponent(score);
+    }
+    // 기존 코드 호환용 (점수가 0이거나 호출 시점에 따라 안전하게)
+    const FORM_URL = FORM_BASE_URL;
     // === 축제 정보 페이지 (방문 시 생명력 +1 보너스) ===
     // 클릭 통계 추적용 단축 URL
     const FESTIVAL_INFO_URL = "https://url.kr/72lwqq";
@@ -4160,18 +4168,18 @@
             
             showToast('📸 점수 이미지가 저장되었어요!', 2200);
             
-            // 1.2초 뒤 응모 폼 열기
+            // 1.2초 뒤 응모 폼 열기 (점수 자동 입력된 URL)
             setTimeout(() => {
                 showToast('🌸 응모 페이지로 이동합니다...', 1800);
                 setTimeout(() => {
-                    window.open(FORM_URL, '_blank');
+                    window.open(getFormUrlWithScore(), '_blank');
                 }, 800);
             }, 1400);
             
         } catch (err) {
             console.error(err);
             showToast('⚠️ 캡처 실패 - 응모 페이지로 이동합니다');
-            setTimeout(() => window.open(FORM_URL, '_blank'), 1000);
+            setTimeout(() => window.open(getFormUrlWithScore(), '_blank'), 1000);
         }
     }
     
