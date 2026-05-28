@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <!-- 캐시 무효화: 항상 최신 버전 받게 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#c41b5a">
@@ -1487,7 +1491,12 @@
     const FORM_SCORE_FIELD = "entry.692602874"; // 최종 점수 입력란
     // 점수를 자동 입력한 응모 폼 URL 생성
     function getFormUrlWithScore() {
-        return FORM_BASE_URL + "&" + FORM_SCORE_FIELD + "=" + encodeURIComponent(score);
+        // 점수가 0이거나 비정상이면 기본 URL 반환
+        const finalScore = (typeof score === 'number' && score >= 0) ? Math.round(score) : 0;
+        const url = FORM_BASE_URL + "&" + FORM_SCORE_FIELD + "=" + encodeURIComponent(finalScore);
+        // 디버그용: 콘솔에 응모 URL 표시
+        try { console.log('[응모폼 URL]', url); } catch(e) {}
+        return url;
     }
     // 기존 코드 호환용 (점수가 0이거나 호출 시점에 따라 안전하게)
     const FORM_URL = FORM_BASE_URL;
